@@ -103,3 +103,41 @@ type APIService struct {
 	CreatedAt         time.Time `json:"created_at"`
 	UpdatedAt         time.Time `json:"updated_at"`
 }
+type LedgerAccount struct {
+	ID        string    `json:"id"`
+	AgentID   *string   `json:"agent_id,omitempty"`
+	WalletID  *string   `json:"wallet_id,omitempty"`
+	Asset     string    `json:"asset"`
+	Balance   float64   `json:"balance"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+}
+
+type LedgerEntry struct {
+	ID           string    `json:"id"`
+	PaymentID    *string   `json:"payment_id,omitempty"`
+	SettlementID *string   `json:"settlement_id,omitempty"`
+	AccountID    string    `json:"account_id"`
+	EntryType    string    `json:"entry_type"`
+	Debit        float64   `json:"debit"`
+	Credit       float64   `json:"credit"`
+	BalanceAfter float64   `json:"balance_after"`
+	Reference    string    `json:"reference"`
+	CreatedAt    time.Time `json:"created_at"`
+}
+
+type Transaction struct {
+	ID           string     `json:"id"`
+	PaymentID    *string    `json:"payment_id,omitempty"`
+	SettlementID *string    `json:"settlement_id,omitempty"`
+	AgentID      string     `json:"agent_id"`
+	ServiceID    *string    `json:"service_id,omitempty"`
+	Amount       float64    `json:"amount"`
+	Asset        string     `json:"asset"`
+	Network      string     `json:"network"`
+	Protocol     string     `json:"protocol"`
+	Status       string     `json:"status"`
+	TxHash       *string    `json:"tx_hash,omitempty"`
+	CreatedAt    time.Time  `json:"created_at"`
+	CompletedAt  *time.Time `json:"completed_at,omitempty"`
+}

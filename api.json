@@ -1,0 +1,700 @@
+{
+  "_type": "export",
+  "__export_format": 4,
+  "__export_date": "2026-08-23T00:00:00.000Z",
+  "__export_source": "bheri-api",
+  "resources": [
+    {
+      "_id": "wrk_bheri",
+      "parentId": null,
+      "modified": 1755907200000,
+      "created": 1755907200000,
+      "name": "BHERI API",
+      "description": "BHERI Autonomous Payment Infrastructure API",
+      "scope": "collection",
+      "_type": "workspace"
+    },
+    {
+      "_id": "env_bheri",
+      "parentId": "wrk_bheri",
+      "modified": 1755907200000,
+      "created": 1755907200000,
+      "name": "Base Environment",
+      "data": {
+        "base_url": "http://localhost:8080/api/v1",
+        "token": "",
+        "user_id": "",
+        "wallet_id": "",
+        "agent_id": "",
+        "policy_id": "",
+        "session_id": "",
+        "payment_id": "",
+        "api_service_id": ""
+      },
+      "_type": "environment"
+    },
+    {
+      "_id": "fld_auth",
+      "parentId": "wrk_bheri",
+      "modified": 1755907200000,
+      "created": 1755907200000,
+      "name": "01 - Authentication",
+      "description": "",
+      "environment": {},
+      "environmentPropertyOrder": null,
+      "_type": "request_group"
+    },
+    {
+      "_id": "req_register",
+      "parentId": "fld_auth",
+      "modified": 1755907200000,
+      "created": 1755907200000,
+      "url": "{{ _.base_url }}/auth/register",
+      "name": "Register User",
+      "description": "Create a BHERI user account.",
+      "method": "POST",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"name\": \"Everest Demo\",\n  \"email\": \"everest@bheri.net\",\n  \"password\": \"BheriDemo123!\"\n}"
+      },
+      "parameters": [],
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "authentication": {},
+      "metaSortKey": 1,
+      "isPrivate": false,
+      "_type": "request"
+    },
+    {
+      "_id": "req_login",
+      "parentId": "fld_auth",
+      "modified": 1755907200000,
+      "created": 1755907200000,
+      "url": "{{ _.base_url }}/auth/login",
+      "name": "Login",
+      "description": "Login and copy the returned JWT into the environment token variable.",
+      "method": "POST",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"email\": \"everest@bheri.net\",\n  \"password\": \"BheriDemo123!\"\n}"
+      },
+      "parameters": [],
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "authentication": {},
+      "metaSortKey": 2,
+      "isPrivate": false,
+      "_type": "request"
+    },
+    {
+      "_id": "req_me",
+      "parentId": "fld_auth",
+      "modified": 1755907200000,
+      "created": 1755907200000,
+      "url": "{{ _.base_url }}/me",
+      "name": "Get Current User",
+      "description": "",
+      "method": "GET",
+      "body": {},
+      "parameters": [],
+      "headers": [],
+      "authentication": {
+        "type": "bearer",
+        "token": "{{ _.token }}"
+      },
+      "metaSortKey": 3,
+      "isPrivate": false,
+      "_type": "request"
+    },
+    {
+      "_id": "fld_wallet",
+      "parentId": "wrk_bheri",
+      "modified": 1755907200000,
+      "created": 1755907200000,
+      "name": "02 - Wallets",
+      "description": "",
+      "environment": {},
+      "environmentPropertyOrder": null,
+      "_type": "request_group"
+    },
+    {
+      "_id": "req_wallet_create",
+      "parentId": "fld_wallet",
+      "modified": 1755907200000,
+      "created": 1755907200000,
+      "url": "{{ _.base_url }}/wallets",
+      "name": "Create Wallet",
+      "description": "Create an agent-capable wallet.",
+      "method": "POST",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"name\": \"BHERI Treasury Wallet\",\n  \"network\": \"solana-devnet\",\n  \"asset\": \"USDC\"\n}"
+      },
+      "parameters": [],
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "authentication": {
+        "type": "bearer",
+        "token": "{{ _.token }}"
+      },
+      "metaSortKey": 1,
+      "isPrivate": false,
+      "_type": "request"
+    },
+    {
+      "_id": "req_wallet_list",
+      "parentId": "fld_wallet",
+      "modified": 1755907200000,
+      "created": 1755907200000,
+      "url": "{{ _.base_url }}/wallets",
+      "name": "List Wallets",
+      "description": "",
+      "method": "GET",
+      "body": {},
+      "parameters": [],
+      "headers": [],
+      "authentication": {
+        "type": "bearer",
+        "token": "{{ _.token }}"
+      },
+      "metaSortKey": 2,
+      "isPrivate": false,
+      "_type": "request"
+    },
+    {
+      "_id": "req_wallet_get",
+      "parentId": "fld_wallet",
+      "modified": 1755907200000,
+      "created": 1755907200000,
+      "url": "{{ _.base_url }}/wallets/{{ _.wallet_id }}",
+      "name": "Get Wallet",
+      "description": "",
+      "method": "GET",
+      "body": {},
+      "parameters": [],
+      "headers": [],
+      "authentication": {
+        "type": "bearer",
+        "token": "{{ _.token }}"
+      },
+      "metaSortKey": 3,
+      "isPrivate": false,
+      "_type": "request"
+    },
+    {
+      "_id": "fld_agents",
+      "parentId": "wrk_bheri",
+      "modified": 1755907200000,
+      "created": 1755907200000,
+      "name": "03 - Agents",
+      "description": "",
+      "environment": {},
+      "environmentPropertyOrder": null,
+      "_type": "request_group"
+    },
+    {
+      "_id": "req_agent_create",
+      "parentId": "fld_agents",
+      "modified": 1755907200000,
+      "created": 1755907200000,
+      "url": "{{ _.base_url }}/agents",
+      "name": "Create AI Agent",
+      "description": "Create an autonomous payment agent.",
+      "method": "POST",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"name\": \"Research Agent\",\n  \"description\": \"Autonomous research agent that pays for search and data APIs.\",\n  \"wallet_id\": \"{{ _.wallet_id }}\",\n  \"asset\": \"USDC\",\n  \"network\": \"solana-devnet\"\n}"
+      },
+      "parameters": [],
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "authentication": {
+        "type": "bearer",
+        "token": "{{ _.token }}"
+      },
+      "metaSortKey": 1,
+      "isPrivate": false,
+      "_type": "request"
+    },
+    {
+      "_id": "req_agent_list",
+      "parentId": "fld_agents",
+      "modified": 1755907200000,
+      "created": 1755907200000,
+      "url": "{{ _.base_url }}/agents",
+      "name": "List Agents",
+      "description": "",
+      "method": "GET",
+      "body": {},
+      "parameters": [],
+      "headers": [],
+      "authentication": {
+        "type": "bearer",
+        "token": "{{ _.token }}"
+      },
+      "metaSortKey": 2,
+      "isPrivate": false,
+      "_type": "request"
+    },
+    {
+      "_id": "req_agent_get",
+      "parentId": "fld_agents",
+      "modified": 1755907200000,
+      "created": 1755907200000,
+      "url": "{{ _.base_url }}/agents/{{ _.agent_id }}",
+      "name": "Get Agent",
+      "description": "",
+      "method": "GET",
+      "body": {},
+      "parameters": [],
+      "headers": [],
+      "authentication": {
+        "type": "bearer",
+        "token": "{{ _.token }}"
+      },
+      "metaSortKey": 3,
+      "isPrivate": false,
+      "_type": "request"
+    },
+    {
+      "_id": "req_agent_update",
+      "parentId": "fld_agents",
+      "modified": 1755907200000,
+      "created": 1755907200000,
+      "url": "{{ _.base_url }}/agents/{{ _.agent_id }}",
+      "name": "Update Agent",
+      "description": "",
+      "method": "PUT",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"name\": \"Research Agent v2\",\n  \"description\": \"Updated autonomous research and data agent.\",\n  \"status\": \"active\"\n}"
+      },
+      "parameters": [],
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "authentication": {
+        "type": "bearer",
+        "token": "{{ _.token }}"
+      },
+      "metaSortKey": 4,
+      "isPrivate": false,
+      "_type": "request"
+    },
+    {
+      "_id": "req_agent_delete",
+      "parentId": "fld_agents",
+      "modified": 1755907200000,
+      "created": 1755907200000,
+      "url": "{{ _.base_url }}/agents/{{ _.agent_id }}",
+      "name": "Delete Agent",
+      "description": "",
+      "method": "DELETE",
+      "body": {},
+      "parameters": [],
+      "headers": [],
+      "authentication": {
+        "type": "bearer",
+        "token": "{{ _.token }}"
+      },
+      "metaSortKey": 5,
+      "isPrivate": false,
+      "_type": "request"
+    },
+    {
+      "_id": "fld_policy",
+      "parentId": "wrk_bheri",
+      "modified": 1755907200000,
+      "created": 1755907200000,
+      "name": "04 - Policies",
+      "description": "",
+      "environment": {},
+      "environmentPropertyOrder": null,
+      "_type": "request_group"
+    },
+    {
+      "_id": "req_policy_create",
+      "parentId": "fld_policy",
+      "modified": 1755907200000,
+      "created": 1755907200000,
+      "url": "{{ _.base_url }}/policies",
+      "name": "Create Spending Policy",
+      "description": "Example autonomous spending policy.",
+      "method": "POST",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"agent_id\": \"{{ _.agent_id }}\",\n  \"daily_limit\": 10.00,\n  \"per_transaction\": 0.50,\n  \"weekly_limit\": 50.00,\n  \"require_approval_above\": 2.00,\n  \"allowed_assets\": [\"USDC\"],\n  \"allowed_networks\": [\"solana-devnet\"],\n  \"allowed_merchants\": [\"search-api\", \"weather-api\", \"inference-api\"],\n  \"blocked_services\": [\"unknown-api\", \"gambling-api\"],\n  \"expiration_days\": 30,\n  \"require_approval_new_merchants\": true,\n  \"require_approval_new_assets\": true,\n  \"block_unknown_apis\": true,\n  \"auto_payments\": true\n}"
+      },
+      "parameters": [],
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "authentication": {
+        "type": "bearer",
+        "token": "{{ _.token }}"
+      },
+      "metaSortKey": 1,
+      "isPrivate": false,
+      "_type": "request"
+    },
+    {
+      "_id": "req_policy_get",
+      "parentId": "fld_policy",
+      "modified": 1755907200000,
+      "created": 1755907200000,
+      "url": "{{ _.base_url }}/agents/{{ _.agent_id }}/policy",
+      "name": "Get Agent Policy",
+      "description": "",
+      "method": "GET",
+      "body": {},
+      "parameters": [],
+      "headers": [],
+      "authentication": {
+        "type": "bearer",
+        "token": "{{ _.token }}"
+      },
+      "metaSortKey": 2,
+      "isPrivate": false,
+      "_type": "request"
+    },
+    {
+      "_id": "req_policy_evaluate",
+      "parentId": "fld_policy",
+      "modified": 1755907200000,
+      "created": 1755907200000,
+      "url": "{{ _.base_url }}/agents/{{ _.agent_id }}/policy/evaluate",
+      "name": "Evaluate Payment Policy",
+      "description": "Test whether an agent is allowed to make a payment.",
+      "method": "POST",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"service_id\": \"{{ _.api_service_id }}\",\n  \"merchant\": \"search-api\",\n  \"amount\": 0.002,\n  \"asset\": \"USDC\",\n  \"network\": \"solana-devnet\"\n}"
+      },
+      "parameters": [],
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "authentication": {
+        "type": "bearer",
+        "token": "{{ _.token }}"
+      },
+      "metaSortKey": 3,
+      "isPrivate": false,
+      "_type": "request"
+    },
+    {
+      "_id": "fld_sessions",
+      "parentId": "wrk_bheri",
+      "modified": 1755907200000,
+      "created": 1755907200000,
+      "name": "05 - Sessions",
+      "description": "",
+      "environment": {},
+      "environmentPropertyOrder": null,
+      "_type": "request_group"
+    },
+    {
+      "_id": "req_session_create",
+      "parentId": "fld_sessions",
+      "modified": 1755907200000,
+      "created": 1755907200000,
+      "url": "{{ _.base_url }}/agents/{{ _.agent_id }}/sessions",
+      "name": "Create Agent Session",
+      "description": "Create a temporary scoped spending session.",
+      "method": "POST",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"limit\": 5.00,\n  \"expires_in_minutes\": 60,\n  \"permissions\": {\n    \"assets\": [\"USDC\"],\n    \"networks\": [\"solana-devnet\"],\n    \"services\": [\"search-api\", \"weather-api\"]\n  }\n}"
+      },
+      "parameters": [],
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "authentication": {
+        "type": "bearer",
+        "token": "{{ _.token }}"
+      },
+      "metaSortKey": 1,
+      "isPrivate": false,
+      "_type": "request"
+    },
+    {
+      "_id": "req_session_list",
+      "parentId": "fld_sessions",
+      "modified": 1755907200000,
+      "created": 1755907200000,
+      "url": "{{ _.base_url }}/agents/{{ _.agent_id }}/sessions",
+      "name": "List Agent Sessions",
+      "description": "",
+      "method": "GET",
+      "body": {},
+      "parameters": [],
+      "headers": [],
+      "authentication": {
+        "type": "bearer",
+        "token": "{{ _.token }}"
+      },
+      "metaSortKey": 2,
+      "isPrivate": false,
+      "_type": "request"
+    },
+    {
+      "_id": "req_session_revoke",
+      "parentId": "fld_sessions",
+      "modified": 1755907200000,
+      "created": 1755907200000,
+      "url": "{{ _.base_url }}/sessions/{{ _.session_id }}/revoke",
+      "name": "Revoke Session",
+      "description": "",
+      "method": "POST",
+      "body": {},
+      "parameters": [],
+      "headers": [],
+      "authentication": {
+        "type": "bearer",
+        "token": "{{ _.token }}"
+      },
+      "metaSortKey": 3,
+      "isPrivate": false,
+      "_type": "request"
+    },
+    {
+      "_id": "fld_api_services",
+      "parentId": "wrk_bheri",
+      "modified": 1755907200000,
+      "created": 1755907200000,
+      "name": "06 - API Services",
+      "description": "",
+      "environment": {},
+      "environmentPropertyOrder": null,
+      "_type": "request_group"
+    },
+    {
+      "_id": "req_api_create",
+      "parentId": "fld_api_services",
+      "modified": 1755907200000,
+      "created": 1755907200000,
+      "url": "{{ _.base_url }}/api-services",
+      "name": "Create API Service",
+      "description": "Register a pay-per-request API.",
+      "method": "POST",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"name\": \"Search API\",\n  \"category\": \"search\",\n  \"price_per_request\": 0.002,\n  \"network\": \"solana-devnet\",\n  \"protocol\": \"x402\",\n  \"description\": \"Search API for autonomous research agents.\",\n  \"endpoint\": \"https://api.example.com/search\",\n  \"icon\": \"search\",\n  \"requests_30d\": 0,\n  \"revenue_30d\": 0\n}"
+      },
+      "parameters": [],
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "authentication": {
+        "type": "bearer",
+        "token": "{{ _.token }}"
+      },
+      "metaSortKey": 1,
+      "isPrivate": false,
+      "_type": "request"
+    },
+    {
+      "_id": "req_api_list",
+      "parentId": "fld_api_services",
+      "modified": 1755907200000,
+      "created": 1755907200000,
+      "url": "{{ _.base_url }}/api-services",
+      "name": "List API Services",
+      "description": "",
+      "method": "GET",
+      "body": {},
+      "parameters": [],
+      "headers": [],
+      "authentication": {
+        "type": "bearer",
+        "token": "{{ _.token }}"
+      },
+      "metaSortKey": 2,
+      "isPrivate": false,
+      "_type": "request"
+    },
+    {
+      "_id": "req_api_active",
+      "parentId": "fld_api_services",
+      "modified": 1755907200000,
+      "created": 1755907200000,
+      "url": "{{ _.base_url }}/api-services/active",
+      "name": "List Active API Services",
+      "description": "",
+      "method": "GET",
+      "body": {},
+      "parameters": [],
+      "headers": [],
+      "authentication": {
+        "type": "bearer",
+        "token": "{{ _.token }}"
+      },
+      "metaSortKey": 3,
+      "isPrivate": false,
+      "_type": "request"
+    },
+    {
+      "_id": "req_api_get",
+      "parentId": "fld_api_services",
+      "modified": 1755907200000,
+      "created": 1755907200000,
+      "url": "{{ _.base_url }}/api-services/{{ _.api_service_id }}",
+      "name": "Get API Service",
+      "description": "",
+      "method": "GET",
+      "body": {},
+      "parameters": [],
+      "headers": [],
+      "authentication": {
+        "type": "bearer",
+        "token": "{{ _.token }}"
+      },
+      "metaSortKey": 4,
+      "isPrivate": false,
+      "_type": "request"
+    },
+    {
+      "_id": "req_api_update",
+      "parentId": "fld_api_services",
+      "modified": 1755907200000,
+      "created": 1755907200000,
+      "url": "{{ _.base_url }}/api-services/{{ _.api_service_id }}",
+      "name": "Update API Service",
+      "description": "",
+      "method": "PUT",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"name\": \"Search API\",\n  \"category\": \"search\",\n  \"price_per_request\": 0.002,\n  \"network\": \"solana-devnet\",\n  \"protocol\": \"x402\",\n  \"description\": \"Updated autonomous search API.\",\n  \"endpoint\": \"https://api.example.com/search\",\n  \"icon\": \"search\"\n}"
+      },
+      "parameters": [],
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "authentication": {
+        "type": "bearer",
+        "token": "{{ _.token }}"
+      },
+      "metaSortKey": 5,
+      "isPrivate": false,
+      "_type": "request"
+    },
+    {
+      "_id": "req_api_delete",
+      "parentId": "fld_api_services",
+      "modified": 1755907200000,
+      "created": 1755907200000,
+      "url": "{{ _.base_url }}/api-services/{{ _.api_service_id }}",
+      "name": "Delete API Service",
+      "description": "",
+      "method": "DELETE",
+      "body": {},
+      "parameters": [],
+      "headers": [],
+      "authentication": {
+        "type": "bearer",
+        "token": "{{ _.token }}"
+      },
+      "metaSortKey": 6,
+      "isPrivate": false,
+      "_type": "request"
+    },
+    {
+      "_id": "fld_payments",
+      "parentId": "wrk_bheri",
+      "modified": 1755907200000,
+      "created": 1755907200000,
+      "name": "07 - Payments",
+      "description": "",
+      "environment": {},
+      "environmentPropertyOrder": null,
+      "_type": "request_group"
+    },
+    {
+      "_id": "req_payment_create",
+      "parentId": "fld_payments",
+      "modified": 1755907200000,
+      "created": 1755907200000,
+      "url": "{{ _.base_url }}/payments",
+      "name": "Create x402 Payment",
+      "description": "Create an autonomous x402 payment request.",
+      "method": "POST",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"agent_id\": \"{{ _.agent_id }}\",\n  \"session_id\": \"{{ _.session_id }}\",\n  \"service_id\": \"{{ _.api_service_id }}\",\n  \"amount\": 0.002,\n  \"asset\": \"USDC\",\n  \"network\": \"solana-devnet\",\n  \"protocol\": \"x402\",\n  \"idempotency_key\": \"demo-payment-001\"\n}"
+      },
+      "parameters": [],
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "name": "Idempotency-Key",
+          "value": "demo-payment-001"
+        }
+      ],
+      "authentication": {
+        "type": "bearer",
+        "token": "{{ _.token }}"
+      },
+      "metaSortKey": 1,
+      "isPrivate": false,
+      "_type": "request"
+    },
+    {
+      "_id": "req_payment_get",
+      "parentId": "fld_payments",
+      "modified": 1755907200000,
+      "created": 1755907200000,
+      "url": "{{ _.base_url }}/payments/{{ _.payment_id }}",
+      "name": "Get Payment",
+      "description": "",
+      "method": "GET",
+      "body": {},
+      "parameters": [],
+      "headers": [],
+      "authentication": {
+        "type": "bearer",
+        "token": "{{ _.token }}"
+      },
+      "metaSortKey": 2,
+      "isPrivate": false,
+      "_type": "request"
+    }
+  ]
+}
