@@ -56,3 +56,15 @@ type Policy struct {
 	CreatedAt                   time.Time `json:"created_at"`
 	UpdatedAt                   time.Time `json:"updated_at"`
 }
+
+
+type Session struct {
+	ID        string    `json:"id"`
+	AgentID   string    `json:"agent_id"`
+	Name      string    `json:"name"`
+	Status    string    `json:"status"`
+	Limit     float64   `json:"limit"`
+	Spent     float64   `json:"spent"`
+	CreatedAt time.Time `json:"created_at"`
+	ExpiresAt time.Time `json:"expires_at"`
+}
