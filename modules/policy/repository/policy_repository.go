@@ -78,81 +78,81 @@ func (r *policyRepository) Create(
 
 	var policy models.Policy
 
-	err = tx.QueryRow(
-		ctx,
-		`
-		INSERT INTO policies (
-			agent_id,
-			daily_limit,
-			per_transaction_limit,
-			weekly_limit,
-			require_approval_above,
-			expiration_days,
-			require_approval_new_merchants,
-			require_approval_new_assets,
-			block_unknown_apis,
-			auto_payments,
-			status,
-			expires_at
-		)
-		VALUES (
-			$1,
-			$2,
-			$3,
-			$4,
-			$5,
-			$6,
-			$7,
-			$8,
-			$9,
-			$10,
-			'active',
-			NOW() + ($6 * INTERVAL '1 day')
-		)
-		RETURNING
-			id,
-			agent_id,
-			daily_limit,
-			per_transaction_limit,
-			weekly_limit,
-			require_approval_above,
-			expiration_days,
-			require_approval_new_merchants,
-			require_approval_new_assets,
-			block_unknown_apis,
-			auto_payments,
-			status,
-			expires_at,
-			created_at,
-			updated_at
-		`,
-		agentID,
-		data.DailyLimit,
-		data.PerTransactionLimit,
-		data.WeeklyLimit,
-		data.RequireApprovalAbove,
-		data.ExpirationDays,
-		data.RequireApprovalNewMerchants,
-		data.RequireApprovalNewAssets,
-		data.BlockUnknownAPIs,
-		data.AutoPayments,
-	).Scan(
-		&policy.ID,
-		&policy.AgentID,
-		&policy.DailyLimit,
-		&policy.PerTransactionLimit,
-		&policy.WeeklyLimit,
-		&policy.RequireApprovalAbove,
-		&policy.ExpirationDays,
-		&policy.RequireApprovalNewMerchants,
-		&policy.RequireApprovalNewAssets,
-		&policy.BlockUnknownAPIs,
-		&policy.AutoPayments,
-		&policy.Status,
-		&policy.ExpiresAt,
-		&policy.CreatedAt,
-		&policy.UpdatedAt,
-	)
+err = tx.QueryRow(
+    ctx,
+    `
+    INSERT INTO policies (
+        agent_id,
+        daily_limit,
+        per_transaction_limit,
+        weekly_limit,
+        require_approval_above,
+        expiration_days,
+        require_approval_new_merchants,
+        require_approval_new_assets,
+        block_unknown_apis,
+        auto_payments,
+        status,
+        expires_at
+    )
+    VALUES (
+        $1,
+        $2,
+        $3,
+        $4,
+        $5,
+        $6,
+        $7,
+        $8,
+        $9,
+        $10,
+        'active',
+        NOW() + ($6::integer * INTERVAL '1 day')
+    )
+    RETURNING
+        id,
+        agent_id,
+        daily_limit,
+        per_transaction_limit,
+        weekly_limit,
+        require_approval_above,
+        expiration_days,
+        require_approval_new_merchants,
+        require_approval_new_assets,
+        block_unknown_apis,
+        auto_payments,
+        status,
+        expires_at,
+        created_at,
+        updated_at
+    `,
+    agentID,
+    data.DailyLimit,
+    data.PerTransactionLimit,
+    data.WeeklyLimit,
+    data.RequireApprovalAbove,
+    data.ExpirationDays,
+    data.RequireApprovalNewMerchants,
+    data.RequireApprovalNewAssets,
+    data.BlockUnknownAPIs,
+    data.AutoPayments,
+).Scan(
+    &policy.ID,
+    &policy.AgentID,
+    &policy.DailyLimit,
+    &policy.PerTransactionLimit,
+    &policy.WeeklyLimit,
+    &policy.RequireApprovalAbove,
+    &policy.ExpirationDays,
+    &policy.RequireApprovalNewMerchants,
+    &policy.RequireApprovalNewAssets,
+    &policy.BlockUnknownAPIs,
+    &policy.AutoPayments,
+    &policy.Status,
+    &policy.ExpiresAt,
+    &policy.CreatedAt,
+    &policy.UpdatedAt,
+)
 
 	if err != nil {
 		return nil, fmt.Errorf("create policy: %w", err)

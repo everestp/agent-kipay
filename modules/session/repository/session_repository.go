@@ -62,43 +62,43 @@ func (r *sessionRepository) Create(
 ) (*models.Session, error) {
 
 	var session models.Session
-	
+
 	err := r.db.QueryRow(
-		ctx,
-		`
-		INSERT INTO agent_sessions (
-			agent_id,
-			name,
-			key_hash,
-			spending_limit,
-			expires_at
-		)
-		VALUES ($1,$2,$3,$4,$5)
-		RETURNING
-			id,
-			agent_id,
-			name,
-			status,
-			spending_limit,
-			spent,
-			created_at,
-			expires_at
-		`,
-		agentID,
-		name,
-		keyHash,
-		limit,
-		expiresAt,
-	).Scan(
-		&session.ID,
-		&session.AgentID,
-		&session.Name,
-		&session.Status,
-		&session.Limit,
-		&session.Spent,
-		&session.CreatedAt,
-		&session.ExpiresAt,
-	)
+    ctx,
+    `
+    INSERT INTO sessions (
+        agent_id,
+        name,
+        key_hash,
+        spending_limit,
+        expires_at
+    )
+    VALUES ($1, $2, $3, $4, $5)
+    RETURNING
+        id,
+        agent_id,
+        name,
+        status,
+        spending_limit,
+        spent_amount,
+        created_at,
+        expires_at
+    `,
+    agentID,
+    name,
+    keyHash,
+    limit,
+    expiresAt,
+).Scan(
+    &session.ID,
+    &session.AgentID,
+    &session.Name,
+    &session.Status,
+    &session.Limit,
+    &session.Spent,
+    &session.CreatedAt,
+    &session.ExpiresAt,
+)
 
 	if err != nil {
 		return nil, err
