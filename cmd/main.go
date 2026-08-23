@@ -36,26 +36,50 @@ func main() {
 	walletRepository := walletrepo.NewWalletRepository(db)
 	walletService := walletservice.NewWalletService(walletRepository)
 	walletController := walletcontroller.NewWalletController(walletService)
+	// cmd/main.go — add these dependencies/wiring
+
+agentRepository := agentrepo.NewAgentRepository(db)
+agentService := agentservice.NewAgentService(agentRepository)
+agentController := agentcontroller.NewAgentController(agentService)
+
+policyRepository := policyrepo.NewPolicyRepository(db)
+policyService := policyservice.NewPolicyService(policyRepository)
+policyController := policycontroller.NewPolicyController(policyService)
 
 	router := chi.NewRouter()
 
 	router.Use(middleware.Logger)
 
-	router.Route("/api/v1", func(r chi.Router) {
+router.Route("/api/v1", func(r chi.Router) {
 
-		r.Post("/auth/register", userController.Register)
-		r.Post("/auth/login", userController.Login)
+	r.Post("/auth/register", userController.Register)
+	r.Post("/auth/login", userController.Login)
 
-		r.Group(func(r chi.Router) {
-			r.Use(middleware.Auth)
+	r.Group(func(r chi.Router) {
 
-			r.Get("/me", userController.Me)
+		r.Use(middleware.Auth)
 
-			r.Post("/wallets", walletController.Create)
-			r.Get("/wallets", walletController.List)
-			r.Get("/wallets/{id}", walletController.Get)
-		})
+		r.Get("/me", userController.Me)
+
+		r.Post("/wallets", walletController.Create)
+		r.Get("/wallets", walletController.List)
+		r.Get("/wallets/{id}", walletController.Get)
+
+		r.Post("/agents", agentController.Create)
+		r.Get("/agents", agentController.List)
+		r.Get("/agents/{id}", agentController.Get)
+		r.Put("/agents/{id}", agentController.Update)
+		r.Delete("/agents/{id}", agentController.Delete)
+
+		r.Post("/policies", policyController.Create)
+		r.Get("/agents/{agentID}/policy", policyController.Get)
+
+		r.Post(
+			"/agents/{agentID}/policy/evaluate",
+			policyController.Evaluate,
+		)
 	})
+})
 
 	port := os.Getenv("PORT")
 	if port == "" {
