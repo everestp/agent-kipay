@@ -4,7 +4,7 @@ package database
 
 import (
 	"context"
-	"fmt"
+
 
 	"github.com/everest/bheri/config"
 	"github.com/jackc/pgx/v5"
@@ -13,15 +13,16 @@ import (
 func NewPostgres() (*pgx.Conn, error) {
 	cfg := config.LoadDatabaseConfig()
 
-	dsn := fmt.Sprintf(
-		"postgres://%s:%s@%s:%s/%s?sslmode=%s",
-		cfg.User,
-		cfg.Password,
-		cfg.Host,
-		cfg.Port,
-		cfg.Name,
-		cfg.SSLMode,
-	)
+	// dsn := fmt.Sprintf(
+	// 	"postgres://%s:%s@%s:%s/%s?sslmode=%s",
+	// 	cfg.User,
+	// 	cfg.Password,
+	// 	cfg.Host,
+	// 	cfg.Port,
+	// 	cfg.Name,
+	// 	cfg.SSLMode,
+	// )
+	dsn :=cfg.Dsn
 
 	conn, err := pgx.Connect(context.Background(), dsn)
 	if err != nil {
