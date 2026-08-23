@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type APIKey struct {
@@ -57,10 +58,10 @@ type APIKeyRepository interface {
 }
 
 type apiKeyRepository struct {
-	db *pgx.Conn
+	db *pgxpool.Pool
 }
 
-func NewAPIKeyRepository(db *pgx.Conn) APIKeyRepository {
+func NewAPIKeyRepository(db *pgxpool.Pool) APIKeyRepository {
 	return &apiKeyRepository{
 		db: db,
 	}

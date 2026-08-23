@@ -5,14 +5,14 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type WebhookRepository struct {
-	db *pgx.Conn
+	db *pgxpool.Pool
 }
 
-func NewWebhookRepository(db *pgx.Conn) *WebhookRepository {
+func NewWebhookRepository(db *pgxpool.Pool) *WebhookRepository {
 	return &WebhookRepository{
 		db: db,
 	}

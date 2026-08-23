@@ -1,38 +1,33 @@
-// database/db.go
-
 package database
 
 import (
 	"context"
 
-
 	"github.com/everest/bheri/config"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-func NewPostgres() (*pgx.Conn, error) {
+func NewPostgres() (*pgxpool.Pool, error) {
 	cfg := config.LoadDatabaseConfig()
 
-	// dsn := fmt.Sprintf(
-	// 	"postgres://%s:%s@%s:%s/%s?sslmode=%s",
-	// 	cfg.User,
-	// 	cfg.Password,
-	// 	cfg.Host,
-	// 	cfg.Port,
-	// 	cfg.Name,
-	// 	cfg.SSLMode,
-	// )
-	dsn :=cfg.Dsn
-
-	conn, err := pgx.Connect(context.Background(), dsn)
+	poolConfig, err := pgxpool.ParseConfig(cfg.Dsn)
 	if err != nil {
 		return nil, err
 	}
 
-	if err := conn.Ping(context.Background()); err != nil {
-		conn.Close(context.Background())
+	// Avoid pgx prepared-statement caching issues.
+	poolConfig.ConnConfig.DefaultQueryExecMode = pgx.QueryExecModeSimpleProtocol
+
+	pool, err := pgxpool.NewWithConfig(context.Background(), poolConfig)
+	if err != nil {
 		return nil, err
 	}
 
-	return conn, nil
+	if err := pool.Ping(context.Background()); err != nil {
+		pool.Close()
+		return nil, err
+	}
+
+	return pool, nil
 }

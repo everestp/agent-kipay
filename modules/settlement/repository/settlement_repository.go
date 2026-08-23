@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type Settlement struct {
@@ -51,11 +52,11 @@ type SettlementRepository interface {
 }
 
 type settlementRepository struct {
-	db *pgx.Conn
+	db *pgxpool.Pool
 }
 
 func NewSettlementRepository(
-	db *pgx.Conn,
+	db *pgxpool.Pool,
 ) SettlementRepository {
 	return &settlementRepository{
 		db: db,

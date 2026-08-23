@@ -7,6 +7,7 @@ import (
 
 	"github.com/everest/bheri/models"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type PolicyRepository interface {
@@ -46,11 +47,11 @@ type PolicyCreateData struct {
 }
 
 type policyRepository struct {
-	db *pgx.Conn
+	db *pgxpool.Pool
 }
 
 func NewPolicyRepository(
-	db *pgx.Conn,
+	db *pgxpool.Pool,
 ) PolicyRepository {
 	return &policyRepository{
 		db: db,

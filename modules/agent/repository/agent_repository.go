@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/everest/bheri/models"
-	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type AgentRepository interface {
@@ -49,11 +49,11 @@ type AgentRepository interface {
 }
 
 type agentRepository struct {
-	db *pgx.Conn
+	db *pgxpool.Pool
 }
 
 func NewAgentRepository(
-	db *pgx.Conn,
+	db *pgxpool.Pool,
 ) AgentRepository {
 	return &agentRepository{db: db}
 }

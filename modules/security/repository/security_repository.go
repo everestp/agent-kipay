@@ -5,7 +5,8 @@ package repository
 import (
 	"context"
 
-	"github.com/jackc/pgx/v5"
+	
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type SecurityRepository interface {
@@ -21,11 +22,11 @@ type SecurityRepository interface {
 }
 
 type securityRepository struct {
-	db *pgx.Conn
+	db *pgxpool.Pool
 }
 
 func NewSecurityRepository(
-	db *pgx.Conn,
+	db *pgxpool.Pool,
 ) SecurityRepository {
 	return &securityRepository{db: db}
 }

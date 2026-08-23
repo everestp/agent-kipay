@@ -7,13 +7,14 @@ import (
 	"github.com/everest/bheri/modules/ledger/dto"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type LedgerRepository struct {
-	db *pgx.Conn
+	db *pgxpool.Pool
 }
 
-func NewLedgerRepository(db *pgx.Conn) *LedgerRepository {
+func NewLedgerRepository(db *pgxpool.Pool) *LedgerRepository {
 	return &LedgerRepository{
 		db: db,
 	}

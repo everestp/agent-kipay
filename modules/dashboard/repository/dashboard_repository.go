@@ -5,7 +5,7 @@ package repository
 import (
 	"context"
 
-	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type DashboardRepository interface {
@@ -26,10 +26,10 @@ type DashboardStats struct {
 }
 
 type dashboardRepository struct {
-	db *pgx.Conn
+	db *pgxpool.Pool
 }
 
-func NewDashboardRepository(db *pgx.Conn) DashboardRepository {
+func NewDashboardRepository(db *pgxpool.Pool) DashboardRepository {
 	return &dashboardRepository{
 		db: db,
 	}

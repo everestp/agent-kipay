@@ -5,7 +5,8 @@ import (
 	"errors"
 
 	"github.com/everest/bheri/models"
-	"github.com/jackc/pgx/v5"
+	
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type PaymentRepository interface {
@@ -49,11 +50,11 @@ type PaymentRepository interface {
 }
 
 type paymentRepository struct {
-	db *pgx.Conn
+	db *pgxpool.Pool
 }
 var ErrPaymentNotFound = errors.New("payment not found")
 func NewPaymentRepository(
-	db *pgx.Conn,
+	db *pgxpool.Pool,
 ) PaymentRepository {
 	return &paymentRepository{
 		db: db,

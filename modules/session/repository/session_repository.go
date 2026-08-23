@@ -5,7 +5,8 @@ import (
 	"time"
 
 	"github.com/everest/bheri/models"
-	"github.com/jackc/pgx/v5"
+	
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type SessionRepository interface {
@@ -41,11 +42,11 @@ type SessionRepository interface {
 }
 
 type sessionRepository struct {
-	db *pgx.Conn
+	db *pgxpool.Pool
 }
 
 func NewSessionRepository(
-	db *pgx.Conn,
+	db *pgxpool.Pool,
 ) SessionRepository {
 	return &sessionRepository{
 		db: db,

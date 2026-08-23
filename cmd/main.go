@@ -3,7 +3,7 @@
 package main
 
 import (
-	"context"
+
 	"net/http"
 	"os"
 
@@ -47,15 +47,13 @@ import (
 )
 
 func main() {
-	logger := config.NewLogger()
+logger := config.NewLogger()
 
-	db, err := database.NewPostgres()
-	if err != nil {
-		logger.Fatal(err)
-	}
-
-	defer db.Close(context.Background())
-
+db, err := database.NewPostgres()
+if err != nil {
+    logger.Fatal(err)
+}
+defer db.Close()
 	// =========================================================
 	// USER
 	// =========================================================

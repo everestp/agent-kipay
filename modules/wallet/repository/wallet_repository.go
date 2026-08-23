@@ -6,7 +6,7 @@ import (
 	"context"
 
 	"github.com/everest/bheri/models"
-	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type WalletRepository interface {
@@ -31,11 +31,11 @@ type WalletRepository interface {
 }
 
 type walletRepository struct {
-	db *pgx.Conn
+	db *pgxpool.Pool
 }
 
 func NewWalletRepository(
-	db *pgx.Conn,
+	db *pgxpool.Pool,
 ) WalletRepository {
 	return &walletRepository{
 		db: db,

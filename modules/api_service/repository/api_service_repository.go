@@ -7,7 +7,8 @@ import (
 
 	"github.com/everest/bheri/models"
 	"github.com/everest/bheri/modules/api_service/dto"
-	"github.com/jackc/pgx/v5"
+
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type APIServiceRepository interface {
@@ -42,11 +43,11 @@ type APIServiceRepository interface {
 }
 
 type apiServiceRepository struct {
-	db *pgx.Conn
+	db *pgxpool.Pool
 }
 
 func NewAPIServiceRepository(
-	db *pgx.Conn,
+	db *pgxpool.Pool,
 ) APIServiceRepository {
 	return &apiServiceRepository{
 		db: db,
