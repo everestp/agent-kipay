@@ -1,0 +1,9 @@
+router.Get(
+	"/api/search",
+	x402middleware.PaymentRequired(
+		"0.002",
+		"USDC",
+	)(
+		http.HandlerFunc(searchHandler),
+	),
+)

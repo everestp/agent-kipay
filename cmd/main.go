@@ -45,7 +45,20 @@ agentController := agentcontroller.NewAgentController(agentService)
 policyRepository := policyrepo.NewPolicyRepository(db)
 policyService := policyservice.NewPolicyService(policyRepository)
 policyController := policycontroller.NewPolicyController(policyService)
+// cmd/main.go — dependency wiring
 
+apiServiceRepository :=
+	apiServiceRepository.NewAPIServiceRepository(db)
+
+apiServiceService :=
+	apiServiceService.NewAPIServiceService(
+		apiServiceRepository,
+	)
+
+apiServiceController :=
+	apiServiceController.NewAPIServiceController(
+		apiServiceService,
+	)
 	router := chi.NewRouter()
 
 	router.Use(middleware.Logger)
@@ -96,6 +109,54 @@ router.Route("/api/v1", func(r chi.Router) {
 		r.Post(
 			"/sessions/{id}/revoke",
 			sessionController.Revoke,
+		)
+	})
+	r.Group(func(r chi.Router) {
+
+		r.Use(middleware.Auth)
+
+		r.Post(
+			"/payments",
+			paymentController.Create,
+		)
+
+		r.Get(
+			"/payments/{id}",
+			paymentController.Get,
+		)
+	})
+	r.Group(func(r chi.Router) {
+
+		r.Use(middleware.Auth)
+
+		r.Post(
+			"/api-services",
+			apiServiceController.Create,
+		)
+
+		r.Get(
+			"/api-services",
+			apiServiceController.List,
+		)
+
+		r.Get(
+			"/api-services/active",
+			apiServiceController.ListActive,
+		)
+
+		r.Get(
+			"/api-services/{id}",
+			apiServiceController.Get,
+		)
+
+		r.Put(
+			"/api-services/{id}",
+			apiServiceController.Update,
+		)
+
+		r.Delete(
+			"/api-services/{id}",
+			apiServiceController.Delete,
 		)
 	})
 })

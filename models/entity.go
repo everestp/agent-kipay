@@ -89,3 +89,17 @@ type Payment struct {
 	CompletedAt    *time.Time `json:"completed_at"`
 	FailedAt       *time.Time `json:"failed_at"`
 }
+type APIService struct {
+	ID                string    `json:"id"`
+	Name              string    `json:"name"`
+	Category          string    `json:"category"`
+	Endpoint          string    `json:"endpoint"`
+	PricePerRequest   float64   `json:"price_per_request"`
+	Asset             string    `json:"asset"`
+	Network           string    `json:"network"`
+	Description       string    `json:"description"`
+	ProviderReputation float64  `json:"provider_reputation"`
+	Active            bool      `json:"active"`
+	CreatedAt         time.Time `json:"created_at"`
+	UpdatedAt         time.Time `json:"updated_at"`
+}

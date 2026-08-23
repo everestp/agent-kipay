@@ -21,3 +21,11 @@ type APIServiceResponse struct {
 	Description     string  `json:"description"`
 	Active          bool    `json:"active"`
 }
+type UpdateAPIServiceRequest struct {
+	Name            string  `json:"name"`
+	Category        string  `json:"category"`
+	Endpoint        string  `json:"endpoint"`
+	PricePerRequest float64 `json:"price_per_request"`
+	Description     string  `json:"description"`
+	Active          bool    `json:"active"`
+}
