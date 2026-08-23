@@ -79,6 +79,25 @@ router.Route("/api/v1", func(r chi.Router) {
 			policyController.Evaluate,
 		)
 	})
+	r.Group(func(r chi.Router) {
+
+		r.Use(middleware.Auth)
+
+		r.Post(
+			"/agents/{agentID}/sessions",
+			sessionController.Create,
+		)
+
+		r.Get(
+			"/agents/{agentID}/sessions",
+			sessionController.List,
+		)
+
+		r.Post(
+			"/sessions/{id}/revoke",
+			sessionController.Revoke,
+		)
+	})
 })
 
 	port := os.Getenv("PORT")
