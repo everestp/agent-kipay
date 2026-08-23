@@ -1,193 +1,80 @@
-// modules/ledger/service/ledger_service.go
-
 package service
 
 import (
 	"context"
-	"errors"
 
-	"github.com/jackc/pgx/v5"
+	"github.com/everest/bheri/modules/ledger/dto"
+	"github.com/everest/bheri/modules/ledger/repository"
 )
 
-type LedgerService interface {
-
-	RecordSettlement(
-		ctx context.Context,
-		paymentID string,
-		settlementID string,
-		agentAccountID string,
-		settlementAccountID string,
-		amount float64,
-	) error
-}
-
-type ledgerService struct {
-	db *pgx.Conn
+type LedgerService struct {
+	repository *repository.LedgerRepository
 }
 
 func NewLedgerService(
-	db *pgx.Conn,
-) LedgerService {
-	return &ledgerService{
-		db: db,
+	repository *repository.LedgerRepository,
+) *LedgerService {
+
+	return &LedgerService{
+		repository: repository,
 	}
 }
 
-func (s *ledgerService) RecordSettlement(
+// ============================================================
+// ACCOUNT
+// ============================================================
+
+func (s *LedgerService) CreateAccount(
 	ctx context.Context,
-	paymentID string,
-	settlementID string,
-	agentAccountID string,
-	settlementAccountID string,
-	amount float64,
-) error {
+	req dto.CreateLedgerAccountRequest,
+) (*dto.LedgerAccountResponse, error) {
 
-	if amount <= 0 {
-		return errors.New("invalid ledger amount")
-	}
+	return s.repository.CreateAccount(ctx, req)
+}
 
-	tx, err := s.db.Begin(ctx)
+func (s *LedgerService) GetAccount(
+	ctx context.Context,
+	id string,
+) (*dto.LedgerAccountResponse, error) {
 
-	if err != nil {
-		return err
-	}
+	return s.repository.GetAccount(ctx, id)
+}
 
-	defer tx.Rollback(ctx)
+func (s *LedgerService) ListAccounts(
+	ctx context.Context,
+) ([]dto.LedgerAccountResponse, error) {
 
-	var agentBalance float64
+	return s.repository.ListAccounts(ctx)
+}
 
-	err = tx.QueryRow(
-		ctx,
-		`
-		SELECT balance
-		FROM ledger_accounts
-		WHERE id = $1
-		FOR UPDATE
-		`,
-		agentAccountID,
-	).Scan(&agentBalance)
+// ============================================================
+// TRANSACTION
+// ============================================================
 
-	if err != nil {
-		return err
-	}
+func (s *LedgerService) CreateTransaction(
+	ctx context.Context,
+	req dto.CreateLedgerTransactionRequest,
+) (*dto.LedgerTransactionResponse, error) {
 
-	if agentBalance < amount {
-		return errors.New("insufficient ledger balance")
-	}
+	return s.repository.CreateTransaction(ctx, req)
+}
 
-	newAgentBalance := agentBalance - amount
+func (s *LedgerService) GetTransaction(
+	ctx context.Context,
+	id string,
+) (*dto.LedgerTransactionResponse, error) {
 
-	_, err = tx.Exec(
-		ctx,
-		`
-		UPDATE ledger_accounts
-		SET
-			balance = $1,
-			updated_at = NOW()
-		WHERE id = $2
-		`,
-		newAgentBalance,
-		agentAccountID,
-	)
+	return s.repository.GetTransaction(ctx, id)
+}
 
-	if err != nil {
-		return err
-	}
+// ============================================================
+// ENTRIES
+// ============================================================
 
-	_, err = tx.Exec(
-		ctx,
-		`
-		INSERT INTO ledger_entries (
-			payment_id,
-			settlement_id,
-			account_id,
-			entry_type,
-			debit,
-			credit,
-			balance_after,
-			reference
-		)
-		VALUES (
-			$1,$2,$3,'payment',$4,0,$5,$6
-		)
-		`,
-		paymentID,
-		settlementID,
-		agentAccountID,
-		amount,
-		newAgentBalance,
-		"x402 payment",
-	)
+func (s *LedgerService) ListAccountEntries(
+	ctx context.Context,
+	accountID string,
+) ([]dto.LedgerEntryResponse, error) {
 
-	if err != nil {
-		return err
-	}
-
-	var settlementBalance float64
-
-	err = tx.QueryRow(
-		ctx,
-		`
-		SELECT balance
-		FROM ledger_accounts
-		WHERE id = $1
-		FOR UPDATE
-		`,
-		settlementAccountID,
-	).Scan(&settlementBalance)
-
-	if err != nil {
-		return err
-	}
-
-	newSettlementBalance :=
-		settlementBalance + amount
-
-	_, err = tx.Exec(
-		ctx,
-		`
-		UPDATE ledger_accounts
-		SET
-			balance = $1,
-			updated_at = NOW()
-		WHERE id = $2
-		`,
-		newSettlementBalance,
-		settlementAccountID,
-	)
-
-	if err != nil {
-		return err
-	}
-
-	_, err = tx.Exec(
-		ctx,
-		`
-		INSERT INTO ledger_entries (
-			payment_id,
-			settlement_id,
-			account_id,
-			entry_type,
-			debit,
-			credit,
-			balance_after,
-			reference
-		)
-		VALUES (
-			$1,$2,$3,'settlement',0,$4,$5,$6
-		)
-		`,
-		paymentID,
-		settlementID,
-		settlementAccountID,
-		amount,
-		newSettlementBalance,
-		"solana settlement",
-	)
-
-	if err != nil {
-		return err
-	}
-
-	return tx.Commit(ctx)
+	return s.repository.ListAccountEntries(ctx, accountID)
 }

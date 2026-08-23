@@ -1,213 +1,338 @@
-// modules/transaction/repository/transaction_repository.go
-
 package repository
 
 import (
 	"context"
+	
+	"fmt"
 
-	"github.com/everest/bheri/models"
+	"github.com/everest/bheri/modules/transaction/dto"
 	"github.com/jackc/pgx/v5"
 )
 
-type TransactionRepository interface {
-
-	CreateFromPayment(
-		ctx context.Context,
-		paymentID string,
-	) (*models.Transaction, error)
-
-	FindByID(
-		ctx context.Context,
-		id string,
-	) (*models.Transaction, error)
-
-	ListByAgent(
-		ctx context.Context,
-		agentID string,
-	) ([]models.Transaction, error)
-
-	Complete(
-		ctx context.Context,
-		paymentID string,
-		txHash string,
-	) error
-
-	Fail(
-		ctx context.Context,
-		paymentID string,
-	) error
-}
-
-type transactionRepository struct {
+type TransactionRepository struct {
 	db *pgx.Conn
 }
 
-func NewTransactionRepository(
-	db *pgx.Conn,
-) TransactionRepository {
-	return &transactionRepository{db: db}
+func NewTransactionRepository(db *pgx.Conn) *TransactionRepository {
+	return &TransactionRepository{
+		db: db,
+	}
 }
 
-func (r *transactionRepository) CreateFromPayment(
+func (r *TransactionRepository) Create(
 	ctx context.Context,
-	paymentID string,
-) (*models.Transaction, error) {
+	req dto.CreateTransactionRequest,
+) (*dto.TransactionResponse, error) {
 
-	var transaction models.Transaction
-
-	err := r.db.QueryRow(
-		ctx,
-		`
+	query := `
 		INSERT INTO transactions (
 			payment_id,
 			agent_id,
-			service_id,
-			amount,
-			asset,
-			network,
+			session_id,
+			api_service_id,
+			type,
 			protocol,
-			status
+			network,
+			asset,
+			amount,
+			sender_address,
+			receiver_address,
+			status,
+			verification_status,
+			settlement_status
 		)
-		SELECT
-			id,
-			agent_id,
-			service_id,
-			amount,
-			asset,
-			network,
-			protocol,
+		VALUES (
+			$1,
+			$2,
+			$3,
+			$4,
+			$5,
+			$6,
+			$7,
+			$8,
+			$9,
+			$10,
+			$11,
+			'pending',
+			'pending',
 			'pending'
-		FROM payments
-		WHERE id = $1
-		ON CONFLICT (payment_id)
-		DO UPDATE SET payment_id = EXCLUDED.payment_id
+		)
 		RETURNING
 			id,
 			payment_id,
-			settlement_id,
 			agent_id,
-			service_id,
-			amount,
-			asset,
-			network,
+			session_id,
+			api_service_id,
+			type,
 			protocol,
+			network,
+			asset,
+			amount,
+			sender_address,
+			receiver_address,
 			status,
-			tx_hash,
+			verification_status,
+			settlement_status,
 			created_at,
-			completed_at
-		`,
-		paymentID,
-	).Scan(
-		&transaction.ID,
-		&transaction.PaymentID,
-		&transaction.SettlementID,
-		&transaction.AgentID,
-		&transaction.ServiceID,
-		&transaction.Amount,
-		&transaction.Asset,
-		&transaction.Network,
-		&transaction.Protocol,
-		&transaction.Status,
-		&transaction.TxHash,
-		&transaction.CreatedAt,
-		&transaction.CompletedAt,
-	)
+			updated_at
+	`
 
-	if err != nil {
-		return nil, err
-	}
-
-	return &transaction, nil
-}
-
-func (r *transactionRepository) FindByID(
-	ctx context.Context,
-	id string,
-) (*models.Transaction, error) {
-
-	var transaction models.Transaction
+	var tx dto.TransactionResponse
 
 	err := r.db.QueryRow(
 		ctx,
-		`
-		SELECT
-			id,
-			payment_id,
-			settlement_id,
-			agent_id,
-			service_id,
-			amount,
-			asset,
-			network,
-			protocol,
-			status,
-			tx_hash,
-			created_at,
-			completed_at
-		FROM transactions
-		WHERE id = $1
-		`,
-		id,
+		query,
+		req.PaymentID,
+		req.AgentID,
+		req.SessionID,
+		req.APIServiceID,
+		req.Type,
+		req.Protocol,
+		req.Network,
+		req.Asset,
+		req.Amount,
+		req.SenderAddress,
+		req.ReceiverAddress,
 	).Scan(
-		&transaction.ID,
-		&transaction.PaymentID,
-		&transaction.SettlementID,
-		&transaction.AgentID,
-		&transaction.ServiceID,
-		&transaction.Amount,
-		&transaction.Asset,
-		&transaction.Network,
-		&transaction.Protocol,
-		&transaction.Status,
-		&transaction.TxHash,
-		&transaction.CreatedAt,
-		&transaction.CompletedAt,
+		&tx.ID,
+		&tx.PaymentID,
+		&tx.AgentID,
+		&tx.SessionID,
+		&tx.APIServiceID,
+		&tx.Type,
+		&tx.Protocol,
+		&tx.Network,
+		&tx.Asset,
+		&tx.Amount,
+		&tx.SenderAddress,
+		&tx.ReceiverAddress,
+		&tx.Status,
+		&tx.VerificationStatus,
+		&tx.SettlementStatus,
+		&tx.CreatedAt,
+		&tx.UpdatedAt,
 	)
 
 	if err != nil {
+		return nil, fmt.Errorf(
+			"create transaction: %w",
+			err,
+		)
+	}
+
+	return &tx, nil
+}
+
+func (r *TransactionRepository) GetByID(
+	ctx context.Context,
+	id string,
+) (*dto.TransactionResponse, error) {
+
+	query := `
+		SELECT
+			id,
+			payment_id,
+			agent_id,
+			session_id,
+			api_service_id,
+			type,
+			protocol,
+			network,
+			asset,
+			amount,
+			sender_address,
+			receiver_address,
+			status,
+			tx_hash,
+			block_number,
+			verification_status,
+			settlement_status,
+			created_at,
+			updated_at
+		FROM transactions
+		WHERE id = $1
+	`
+
+	var tx dto.TransactionResponse
+
+	err := r.db.QueryRow(
+		ctx,
+		query,
+		id,
+	).Scan(
+		&tx.ID,
+		&tx.PaymentID,
+		&tx.AgentID,
+		&tx.SessionID,
+		&tx.APIServiceID,
+		&tx.Type,
+		&tx.Protocol,
+		&tx.Network,
+		&tx.Asset,
+		&tx.Amount,
+		&tx.SenderAddress,
+		&tx.ReceiverAddress,
+		&tx.Status,
+		&tx.TxHash,
+		&tx.BlockNumber,
+		&tx.VerificationStatus,
+		&tx.SettlementStatus,
+		&tx.CreatedAt,
+		&tx.UpdatedAt,
+	)
+
+	if err != nil {
+		return nil, fmt.Errorf(
+			"get transaction: %w",
+			err,
+		)
+	}
+
+	return &tx, nil
+}
+
+func (r *TransactionRepository) List(
+	ctx context.Context,
+	agentID string,
+) ([]dto.TransactionResponse, error) {
+
+	query := `
+		SELECT
+			id,
+			payment_id,
+			agent_id,
+			session_id,
+			api_service_id,
+			type,
+			protocol,
+			network,
+			asset,
+			amount,
+			sender_address,
+			receiver_address,
+			status,
+			tx_hash,
+			block_number,
+			verification_status,
+			settlement_status,
+			created_at,
+			updated_at
+		FROM transactions
+		WHERE agent_id = $1
+		ORDER BY created_at DESC
+	`
+
+	rows, err := r.db.Query(
+		ctx,
+		query,
+		agentID,
+	)
+
+	if err != nil {
+		return nil, fmt.Errorf(
+			"list transactions: %w",
+			err,
+		)
+	}
+
+	defer rows.Close()
+
+	transactions := make(
+		[]dto.TransactionResponse,
+		0,
+	)
+
+	for rows.Next() {
+
+		var tx dto.TransactionResponse
+
+		err := rows.Scan(
+			&tx.ID,
+			&tx.PaymentID,
+			&tx.AgentID,
+			&tx.SessionID,
+			&tx.APIServiceID,
+			&tx.Type,
+			&tx.Protocol,
+			&tx.Network,
+			&tx.Asset,
+			&tx.Amount,
+			&tx.SenderAddress,
+			&tx.ReceiverAddress,
+			&tx.Status,
+			&tx.TxHash,
+			&tx.BlockNumber,
+			&tx.VerificationStatus,
+			&tx.SettlementStatus,
+			&tx.CreatedAt,
+			&tx.UpdatedAt,
+		)
+
+		if err != nil {
+			return nil, fmt.Errorf(
+				"scan transaction: %w",
+				err,
+			)
+		}
+
+		transactions = append(
+			transactions,
+			tx,
+		)
+	}
+
+	if err := rows.Err(); err != nil {
 		return nil, err
 	}
 
-	return &transaction, nil
+	return transactions, nil
 }
 
-func (r *transactionRepository) Complete(
+func (r *TransactionRepository) UpdateStatus(
 	ctx context.Context,
-	paymentID string,
-	txHash string,
+	id string,
+	req dto.UpdateTransactionRequest,
 ) error {
-
-	_, err := r.db.Exec(
-		ctx,
-		`
+	query := `
 		UPDATE transactions
 		SET
-			status = 'completed',
-			tx_hash = $1,
-			completed_at = NOW()
-		WHERE payment_id = $2
-		`,
-		txHash,
-		paymentID,
-	)
+			status = $2,
+			tx_hash = COALESCE($3, tx_hash),
+			block_number = COALESCE($4, block_number),
+			verification_status =
+				CASE
+					WHEN $5 = '' THEN verification_status
+					ELSE $5
+				END,
+			settlement_status =
+				CASE
+					WHEN $6 = '' THEN settlement_status
+					ELSE $6
+				END,
+			updated_at = NOW()
+		WHERE id = $1
+	`
 
-	return err
-}
-
-func (r *transactionRepository) Fail(
-	ctx context.Context,
-	paymentID string,
-) error {
-
-	_, err := r.db.Exec(
+	commandTag, err := r.db.Exec(
 		ctx,
-		`
-		UPDATE transactions
-		SET status = 'failed'
-		WHERE payment_id = $1
-		`,
-		paymentID,
+		query,
+		id,
+		req.Status,
+		req.TxHash,
+		req.BlockNumber,
+		req.VerificationStatus,
+		req.SettlementStatus,
 	)
+	if err != nil {
+		return fmt.Errorf(
+			"update transaction: %w",
+			err,
+		)
+	}
 
-	return err
+	if commandTag.RowsAffected() == 0 {
+		return pgx.ErrNoRows
+	}
+
+	return nil
 }

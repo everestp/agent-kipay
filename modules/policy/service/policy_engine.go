@@ -3,6 +3,9 @@ package service
 import (
 	"context"
 	"errors"
+	"strings"
+
+	"github.com/everest/bheri/modules/policy/dto"
 )
 
 type PolicyEngine interface {
@@ -20,16 +23,13 @@ type PolicyEngine interface {
 
 type policyEngine struct {
 	policyService PolicyService
-	sessionService SessionService
 }
 
 func NewPolicyEngine(
 	policyService PolicyService,
-	sessionService SessionService,
 ) PolicyEngine {
 	return &policyEngine{
-		policyService:  policyService,
-		sessionService: sessionService,
+		policyService: policyService,
 	}
 }
 
@@ -44,22 +44,33 @@ func (e *policyEngine) Authorize(
 	merchant string,
 ) error {
 
-	if amount <= 0 {
-		return errors.New(
-			"payment amount must be greater than zero",
-		)
+	if agentID == "" {
+		return errors.New("agent id is required")
 	}
 
-	session, err := e.sessionService.repository.
-		FindByKeyHash(ctx, sessionID)
+	if sessionID == "" {
+		return errors.New("session id is required")
+	}
 
-	_ = session
-	_ = err
+	if amount <= 0 {
+		return errors.New("payment amount must be greater than zero")
+	}
+
+	if strings.TrimSpace(asset) == "" {
+		return errors.New("asset is required")
+	}
+
+	if strings.TrimSpace(network) == "" {
+		return errors.New("network is required")
+	}
+
+	// =========================================================
+	// POLICY EVALUATION
+	// =========================================================
 
 	result, err := e.policyService.Evaluate(
 		ctx,
 		agentID,
-		// request created by caller
 		dto.EvaluatePolicyRequest{
 			Amount:   amount,
 			Asset:    asset,
@@ -73,9 +84,24 @@ func (e *policyEngine) Authorize(
 		return err
 	}
 
-	if result.Decision != "allowed" {
+	if result == nil {
 		return errors.New(
-			result.Reason,
+			"policy evaluation returned no result",
+		)
+	}
+
+	// =========================================================
+	// POLICY DECISION
+	// =========================================================
+
+	if strings.ToLower(result.Decision) != "allowed" {
+
+		if strings.TrimSpace(result.Reason) != "" {
+			return errors.New(result.Reason)
+		}
+
+		return errors.New(
+			"payment blocked by policy",
 		)
 	}
 

@@ -2,40 +2,50 @@ package repository
 
 import (
 	"context"
+	"fmt"
 
-	"github.com/everest/bheri/modules/settlement/dto"
-	"github.com/everest/bheri/models"
 	"github.com/jackc/pgx/v5"
 )
 
-type SettlementRepository interface {
+type Settlement struct {
+	ID          string
+	PaymentID   string
+	TxHash      string
+	Network     string
+	Status      string
+	Amount      float64
+	Asset       string
+	Receiver    string
+	BlockNumber uint64
+	Message     string
+	CreatedAt   string
+	ConfirmedAt *string
+	UserID      string
+}
 
+type SettlementRepository interface {
 	Create(
 		ctx context.Context,
-		paymentID string,
-	) (*models.Settlement, error)
+		settlement Settlement,
+	) (Settlement, error)
 
-	FindByPaymentID(
+	GetByID(
 		ctx context.Context,
-		paymentID string,
-	) (*models.Settlement, error)
+		userID string,
+		id string,
+	) (Settlement, error)
 
-	UpdateSubmitted(
+	List(
+		ctx context.Context,
+		userID string,
+	) ([]Settlement, error)
+
+	UpdateStatus(
 		ctx context.Context,
 		id string,
-		txHash string,
-	) error
-
-	UpdateConfirmed(
-		ctx context.Context,
-		id string,
-		blockNumber int64,
-		confirmations int,
-	) error
-
-	UpdateFailed(
-		ctx context.Context,
-		id string,
+		status string,
+		amount float64,
+		blockNumber uint64,
 		message string,
 	) error
 }
@@ -47,73 +57,317 @@ type settlementRepository struct {
 func NewSettlementRepository(
 	db *pgx.Conn,
 ) SettlementRepository {
-	return &settlementRepository{db: db}
+	return &settlementRepository{
+		db: db,
+	}
 }
+
+// ============================================================
+// CREATE
+// ============================================================
 
 func (r *settlementRepository) Create(
 	ctx context.Context,
-	paymentID string,
-) (*models.Settlement, error) {
+	s Settlement,
+) (Settlement, error) {
 
-	var settlement models.Settlement
-
-	err := r.db.QueryRow(
-		ctx,
-		`
+	const query = `
 		INSERT INTO settlements (
-			payment_id,
-			network,
-			amount,
-			asset,
-			sender_address,
-			receiver_address
-		)
-		SELECT
-			p.id,
-			p.network,
-			p.amount,
-			p.asset,
-			aw.address,
-			w.address
-		FROM payments p
-		JOIN agent_wallets aw
-			ON aw.agent_id = p.agent_id
-		JOIN wallets w
-			ON w.id = p.wallet_id
-		WHERE p.id = $1
-		RETURNING
-			id,
+			user_id,
 			payment_id,
 			tx_hash,
 			network,
+			status,
 			amount,
 			asset,
-			sender_address,
-			receiver_address,
-			status,
-			confirmations,
+			receiver,
 			block_number,
-			created_at
-		`,
-		paymentID,
+			message
+		)
+		VALUES (
+			$1,
+			$2,
+			$3,
+			$4,
+			$5,
+			$6,
+			$7,
+			$8,
+			$9,
+			$10
+		)
+		RETURNING
+			id,
+			user_id,
+			payment_id,
+			tx_hash,
+			network,
+			status,
+			amount,
+			asset,
+			receiver,
+			block_number,
+			message,
+			created_at,
+			confirmed_at
+	`
+
+	var result Settlement
+
+	err := r.db.QueryRow(
+		ctx,
+		query,
+		s.UserID,
+		s.PaymentID,
+		s.TxHash,
+		s.Network,
+		s.Status,
+		s.Amount,
+		s.Asset,
+		s.Receiver,
+		s.BlockNumber,
+		s.Message,
 	).Scan(
-		&settlement.ID,
-		&settlement.PaymentID,
-		&settlement.TxHash,
-		&settlement.Network,
-		&settlement.Amount,
-		&settlement.Asset,
-		&settlement.SenderAddress,
-		&settlement.ReceiverAddress,
-		&settlement.Status,
-		&settlement.Confirmations,
-		&settlement.BlockNumber,
-		&settlement.CreatedAt,
+		&result.ID,
+		&result.UserID,
+		&result.PaymentID,
+		&result.TxHash,
+		&result.Network,
+		&result.Status,
+		&result.Amount,
+		&result.Asset,
+		&result.Receiver,
+		&result.BlockNumber,
+		&result.Message,
+		&result.CreatedAt,
+		&result.ConfirmedAt,
 	)
 
 	if err != nil {
-		return nil, err
+		return Settlement{}, fmt.Errorf(
+			"create settlement: %w",
+			err,
+		)
 	}
 
-	return &settlement, nil
+	return result, nil
+}
+
+// ============================================================
+// GET BY ID
+// ============================================================
+
+func (r *settlementRepository) GetByID(
+	ctx context.Context,
+	userID string,
+	id string,
+) (Settlement, error) {
+
+	const query = `
+		SELECT
+			id,
+			user_id,
+			payment_id,
+			tx_hash,
+			network,
+			status,
+			amount,
+			asset,
+			receiver,
+			block_number,
+			message,
+			created_at,
+			confirmed_at
+		FROM settlements
+		WHERE id = $1
+		AND user_id = $2
+	`
+
+	var settlement Settlement
+
+	err := r.db.QueryRow(
+		ctx,
+		query,
+		id,
+		userID,
+	).Scan(
+		&settlement.ID,
+		&settlement.UserID,
+		&settlement.PaymentID,
+		&settlement.TxHash,
+		&settlement.Network,
+		&settlement.Status,
+		&settlement.Amount,
+		&settlement.Asset,
+		&settlement.Receiver,
+		&settlement.BlockNumber,
+		&settlement.Message,
+		&settlement.CreatedAt,
+		&settlement.ConfirmedAt,
+	)
+
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			return Settlement{}, pgx.ErrNoRows
+		}
+
+		return Settlement{}, fmt.Errorf(
+			"get settlement: %w",
+			err,
+		)
+	}
+
+	return settlement, nil
+}
+
+// ============================================================
+// LIST
+// ============================================================
+
+func (r *settlementRepository) List(
+	ctx context.Context,
+	userID string,
+) ([]Settlement, error) {
+
+	const query = `
+		SELECT
+			id,
+			user_id,
+			payment_id,
+			tx_hash,
+			network,
+			status,
+			amount,
+			asset,
+			receiver,
+			block_number,
+			message,
+			created_at,
+			confirmed_at
+		FROM settlements
+		WHERE user_id = $1
+		ORDER BY created_at DESC
+	`
+
+	rows, err := r.db.Query(
+		ctx,
+		query,
+		userID,
+	)
+
+	if err != nil {
+		return nil, fmt.Errorf(
+			"list settlements: %w",
+			err,
+		)
+	}
+
+	defer rows.Close()
+
+	settlements := make(
+		[]Settlement,
+		0,
+	)
+
+	for rows.Next() {
+
+		var settlement Settlement
+
+		err := rows.Scan(
+			&settlement.ID,
+			&settlement.UserID,
+			&settlement.PaymentID,
+			&settlement.TxHash,
+			&settlement.Network,
+			&settlement.Status,
+			&settlement.Amount,
+			&settlement.Asset,
+			&settlement.Receiver,
+			&settlement.BlockNumber,
+			&settlement.Message,
+			&settlement.CreatedAt,
+			&settlement.ConfirmedAt,
+		)
+
+		if err != nil {
+			return nil, fmt.Errorf(
+				"scan settlement: %w",
+				err,
+			)
+		}
+
+		settlements = append(
+			settlements,
+			settlement,
+		)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf(
+			"iterate settlements: %w",
+			err,
+		)
+	}
+
+	return settlements, nil
+}
+
+// ============================================================
+// UPDATE STATUS
+// ============================================================
+
+func (r *settlementRepository) UpdateStatus(
+	ctx context.Context,
+	id string,
+	status string,
+	amount float64,
+	blockNumber uint64,
+	message string,
+) error {
+
+	const query = `
+		UPDATE settlements
+		SET
+			status = $1,
+			amount = $2,
+			block_number = $3,
+			message = $4,
+
+			confirmed_at =
+				CASE
+					WHEN $1 = 'confirmed'
+						AND confirmed_at IS NULL
+					THEN NOW()
+
+					WHEN $1 != 'confirmed'
+					THEN confirmed_at
+
+					ELSE confirmed_at
+				END
+
+		WHERE id = $5
+	`
+
+	commandTag, err := r.db.Exec(
+		ctx,
+		query,
+		status,
+		amount,
+		blockNumber,
+		message,
+		id,
+	)
+
+	if err != nil {
+		return fmt.Errorf(
+			"update settlement status: %w",
+			err,
+		)
+	}
+
+	if commandTag.RowsAffected() == 0 {
+		return pgx.ErrNoRows
+	}
+
+	return nil
 }

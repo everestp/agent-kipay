@@ -105,8 +105,12 @@ CREATE TABLE users (
     status user_status NOT NULL DEFAULT 'active',
 
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+CREATE INDEX idx_users_email
+ON users(email);
 
 -- =========================================================
 -- WALLETS
@@ -128,8 +132,12 @@ CREATE TABLE wallets (
     status wallet_status NOT NULL DEFAULT 'active',
 
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+CREATE INDEX idx_wallets_user_id
+ON wallets(user_id);
 
 -- =========================================================
 -- WALLET ACCOUNTS
@@ -155,10 +163,14 @@ CREATE TABLE wallet_accounts (
         CHECK (reserved_balance >= 0),
 
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
 
     UNIQUE(wallet_id, asset)
 );
+
+CREATE INDEX idx_wallet_accounts_wallet_id
+ON wallet_accounts(wallet_id);
 
 -- =========================================================
 -- AGENTS
@@ -191,6 +203,7 @@ CREATE TABLE agents (
     last_active_at TIMESTAMPTZ,
 
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
@@ -239,6 +252,7 @@ CREATE TABLE policies (
     expires_at TIMESTAMPTZ,
 
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
@@ -307,7 +321,7 @@ CREATE TABLE policy_blocked_services (
 
 -- =========================================================
 -- SESSIONS
--- Scoped temporary authority for agents
+-- Temporary scoped authority for agents
 -- =========================================================
 
 CREATE TABLE sessions (
@@ -341,7 +355,7 @@ CREATE INDEX idx_sessions_status
 ON sessions(status);
 
 -- =========================================================
--- SESSION ASSETS
+-- SESSION ALLOWED ASSETS
 -- =========================================================
 
 CREATE TABLE session_allowed_assets (
@@ -355,7 +369,7 @@ CREATE TABLE session_allowed_assets (
 );
 
 -- =========================================================
--- SESSION NETWORKS
+-- SESSION ALLOWED NETWORKS
 -- =========================================================
 
 CREATE TABLE session_allowed_networks (
@@ -369,7 +383,7 @@ CREATE TABLE session_allowed_networks (
 );
 
 -- =========================================================
--- SESSION SERVICES
+-- SESSION ALLOWED SERVICES
 -- =========================================================
 
 CREATE TABLE session_allowed_services (
@@ -384,7 +398,6 @@ CREATE TABLE session_allowed_services (
 
 -- =========================================================
 -- API SERVICES
--- Services that accept x402 payments
 -- =========================================================
 
 CREATE TABLE api_services (
@@ -437,6 +450,12 @@ CREATE TABLE api_services (
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+CREATE INDEX idx_api_services_provider_user_id
+ON api_services(provider_user_id);
+
+CREATE INDEX idx_api_services_status
+ON api_services(status);
+
 -- =========================================================
 -- API KEYS
 -- =========================================================
@@ -460,6 +479,9 @@ CREATE TABLE api_keys (
 
     revoked_at TIMESTAMPTZ
 );
+
+CREATE INDEX idx_api_keys_user_id
+ON api_keys(user_id);
 
 -- =========================================================
 -- PAYMENTS
@@ -515,6 +537,12 @@ CREATE TABLE payments (
 
 CREATE INDEX idx_payments_agent_id
 ON payments(agent_id);
+
+CREATE INDEX idx_payments_session_id
+ON payments(session_id);
+
+CREATE INDEX idx_payments_api_service_id
+ON payments(api_service_id);
 
 CREATE INDEX idx_payments_status
 ON payments(status);
@@ -580,8 +608,17 @@ CREATE TABLE transactions (
     settled_at TIMESTAMPTZ
 );
 
+CREATE INDEX idx_transactions_payment_id
+ON transactions(payment_id);
+
 CREATE INDEX idx_transactions_agent_id
 ON transactions(agent_id);
+
+CREATE INDEX idx_transactions_wallet_id
+ON transactions(wallet_id);
+
+CREATE INDEX idx_transactions_service_id
+ON transactions(service_id);
 
 CREATE INDEX idx_transactions_created_at
 ON transactions(created_at DESC);
@@ -619,6 +656,12 @@ CREATE TABLE ledger_accounts (
     )
 );
 
+CREATE INDEX idx_ledger_accounts_wallet_id
+ON ledger_accounts(wallet_id);
+
+CREATE INDEX idx_ledger_accounts_agent_id
+ON ledger_accounts(agent_id);
+
 -- =========================================================
 -- LEDGER TRANSACTIONS
 -- One financial event
@@ -639,6 +682,12 @@ CREATE TABLE ledger_transactions (
 
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+CREATE INDEX idx_ledger_transactions_payment_id
+ON ledger_transactions(payment_id);
+
+CREATE INDEX idx_ledger_transactions_transaction_id
+ON ledger_transactions(transaction_id);
 
 -- =========================================================
 -- LEDGER ENTRIES
@@ -672,7 +721,7 @@ CREATE INDEX idx_ledger_entries_transaction_id
 ON ledger_entries(ledger_transaction_id);
 
 -- =========================================================
--- SETTLEMENT
+-- SETTLEMENTS
 -- Actual Solana settlement
 -- =========================================================
 
@@ -721,7 +770,6 @@ ON settlements(tx_hash);
 
 -- =========================================================
 -- APPROVALS
--- Human approval when policy requires it
 -- =========================================================
 
 CREATE TABLE approvals (
@@ -735,7 +783,8 @@ CREATE TABLE approvals (
         REFERENCES payments(id)
         ON DELETE CASCADE,
 
-    requested_amount NUMERIC(30,9) NOT NULL,
+    requested_amount NUMERIC(30,9) NOT NULL
+        CHECK (requested_amount > 0),
 
     asset asset_type NOT NULL,
 
@@ -750,6 +799,9 @@ CREATE TABLE approvals (
 
 CREATE INDEX idx_approvals_agent_id
 ON approvals(agent_id);
+
+CREATE INDEX idx_approvals_payment_id
+ON approvals(payment_id);
 
 CREATE INDEX idx_approvals_status
 ON approvals(status);
@@ -784,6 +836,9 @@ CREATE TABLE security_events (
 
 CREATE INDEX idx_security_events_agent_id
 ON security_events(agent_id);
+
+CREATE INDEX idx_security_events_payment_id
+ON security_events(payment_id);
 
 CREATE INDEX idx_security_events_created_at
 ON security_events(created_at DESC);
@@ -822,6 +877,9 @@ CREATE TABLE activity_events (
 CREATE INDEX idx_activity_events_user_id
 ON activity_events(user_id);
 
+CREATE INDEX idx_activity_events_agent_id
+ON activity_events(agent_id);
+
 CREATE INDEX idx_activity_events_created_at
 ON activity_events(created_at DESC);
 
@@ -840,7 +898,7 @@ CREATE TABLE webhooks (
 
     secret_hash TEXT NOT NULL,
 
-    events JSONB NOT NULL DEFAULT '[]',
+    events JSONB NOT NULL DEFAULT '[]'::jsonb,
 
     active BOOLEAN NOT NULL DEFAULT TRUE,
 
@@ -848,6 +906,12 @@ CREATE TABLE webhooks (
 
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+CREATE INDEX idx_webhooks_user_id
+ON webhooks(user_id);
+
+CREATE INDEX idx_webhooks_active
+ON webhooks(active);
 
 -- =========================================================
 -- WEBHOOK DELIVERIES
@@ -882,6 +946,9 @@ ON webhook_deliveries(webhook_id);
 
 CREATE INDEX idx_webhook_deliveries_status
 ON webhook_deliveries(status);
+
+CREATE INDEX idx_webhook_deliveries_created_at
+ON webhook_deliveries(created_at DESC);
 
 -- =========================================================
 -- UPDATED_AT TRIGGER

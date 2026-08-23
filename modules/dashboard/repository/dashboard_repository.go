@@ -3,11 +3,13 @@
 package repository
 
 import (
-	"database/sql"
+	"context"
+
+	"github.com/jackc/pgx/v5"
 )
 
 type DashboardRepository interface {
-	GetStats(userID string) (DashboardStats, error)
+	GetStats(ctx context.Context, userID string) (DashboardStats, error)
 }
 
 type DashboardStats struct {
@@ -24,20 +26,23 @@ type DashboardStats struct {
 }
 
 type dashboardRepository struct {
-	db *sql.DB
+	db *pgx.Conn
 }
 
-func NewDashboardRepository(db *sql.DB) DashboardRepository {
+func NewDashboardRepository(db *pgx.Conn) DashboardRepository {
 	return &dashboardRepository{
 		db: db,
 	}
 }
 
-func (r *dashboardRepository) GetStats(userID string) (DashboardStats, error) {
+func (r *dashboardRepository) GetStats(
+	ctx context.Context,
+	userID string,
+) (DashboardStats, error) {
 
 	var stats DashboardStats
 
-	err := r.db.QueryRow(`
+	err := r.db.QueryRow(ctx, `
 		SELECT
 			COALESCE((
 				SELECT SUM(w.balance)

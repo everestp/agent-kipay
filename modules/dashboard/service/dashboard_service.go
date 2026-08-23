@@ -3,6 +3,8 @@
 package service
 
 import (
+	"context"
+
 	"github.com/everest/bheri/modules/dashboard/dto"
 	"github.com/everest/bheri/modules/dashboard/repository"
 )
@@ -27,7 +29,7 @@ func (s *dashboardService) GetDashboard(
 	userID string,
 ) (*dto.DashboardResponse, error) {
 
-	stats, err := s.repository.GetStats(userID)
+	stats, err := s.repository.GetStats(  context.Background(),userID)
 	if err != nil {
 		return nil, err
 	}

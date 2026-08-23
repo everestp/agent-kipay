@@ -49,7 +49,6 @@ func NewSessionService(
 }
 
 func generateSessionKey() (string, error) {
-
 	bytes := make([]byte, 32)
 
 	if _, err := rand.Read(bytes); err != nil {
@@ -60,10 +59,7 @@ func generateSessionKey() (string, error) {
 }
 
 func hashKey(key string) string {
-
-	hash := sha256.Sum256(
-		[]byte(key),
-	)
+	hash := sha256.Sum256([]byte(key))
 
 	return hex.EncodeToString(hash[:])
 }
@@ -74,10 +70,12 @@ func (s *sessionService) Create(
 	request dto.CreateSessionRequest,
 ) (*dto.SessionResponse, error) {
 
+	if agentID == "" {
+		return nil, errors.New("agent id is required")
+	}
+
 	if request.Name == "" {
-		return nil, errors.New(
-			"session name is required",
-		)
+		return nil, errors.New("session name is required")
 	}
 
 	if request.Limit <= 0 {
@@ -91,7 +89,6 @@ func (s *sessionService) Create(
 	}
 
 	key, err := generateSessionKey()
-
 	if err != nil {
 		return nil, err
 	}
@@ -134,6 +131,10 @@ func (s *sessionService) List(
 	agentID string,
 ) ([]models.Session, error) {
 
+	if agentID == "" {
+		return nil, errors.New("agent id is required")
+	}
+
 	return s.repository.FindByAgentID(
 		ctx,
 		agentID,
@@ -144,6 +145,10 @@ func (s *sessionService) Revoke(
 	ctx context.Context,
 	id string,
 ) error {
+
+	if id == "" {
+		return errors.New("session id is required")
+	}
 
 	return s.repository.Revoke(
 		ctx,
@@ -156,21 +161,21 @@ func (s *sessionService) Validate(
 	key string,
 ) (*models.Session, error) {
 
+	if key == "" {
+		return nil, errors.New("session key is required")
+	}
+
 	session, err := s.repository.FindByKeyHash(
 		ctx,
 		hashKey(key),
 	)
 
 	if err != nil {
-		return nil, errors.New(
-			"invalid session key",
-		)
+		return nil, errors.New("invalid session key")
 	}
 
 	if session.Status != "active" {
-		return nil, errors.New(
-			"session is not active",
-		)
+		return nil, errors.New("session is not active")
 	}
 
 	if time.Now().After(session.ExpiresAt) {
@@ -179,9 +184,7 @@ func (s *sessionService) Validate(
 			session.ID,
 		)
 
-		return nil, errors.New(
-			"session has expired",
-		)
+		return nil, errors.New("session has expired")
 	}
 
 	if session.Spent >= session.Limit {

@@ -62,7 +62,7 @@ func (r *sessionRepository) Create(
 ) (*models.Session, error) {
 
 	var session models.Session
-
+	
 	err := r.db.QueryRow(
 		ctx,
 		`

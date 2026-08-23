@@ -57,6 +57,10 @@ func NewPolicyRepository(
 	}
 }
 
+// ============================================================
+// CREATE
+// ============================================================
+
 func (r *policyRepository) Create(
 	ctx context.Context,
 	agentID string,
@@ -65,10 +69,12 @@ func (r *policyRepository) Create(
 
 	tx, err := r.db.Begin(ctx)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("begin policy transaction: %w", err)
 	}
 
-	defer tx.Rollback(ctx)
+	defer func() {
+		_ = tx.Rollback(ctx)
+	}()
 
 	var policy models.Policy
 
@@ -90,7 +96,16 @@ func (r *policyRepository) Create(
 			expires_at
 		)
 		VALUES (
-			$1,$2,$3,$4,$5,$6,$7,$8,$9,$10,
+			$1,
+			$2,
+			$3,
+			$4,
+			$5,
+			$6,
+			$7,
+			$8,
+			$9,
+			$10,
 			'active',
 			NOW() + ($6 * INTERVAL '1 day')
 		)
@@ -140,33 +155,44 @@ func (r *policyRepository) Create(
 	)
 
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("create policy: %w", err)
 	}
 
-	for _, asset := range []string{"USDC"} {
-		_, err = tx.Exec(
-			ctx,
-			`
-			INSERT INTO policy_allowed_assets
-				(policy_id, asset)
-			VALUES ($1, $2)
-			ON CONFLICT DO NOTHING
-			`,
-			policy.ID,
-			asset,
+	// Default allowed asset.
+	_, err = tx.Exec(
+		ctx,
+		`
+		INSERT INTO policy_allowed_assets (
+			policy_id,
+			asset
 		)
+		VALUES ($1, $2)
+		ON CONFLICT DO NOTHING
+		`,
+		policy.ID,
+		"USDC",
+	)
 
-		if err != nil {
-			return nil, err
-		}
+	if err != nil {
+		return nil, fmt.Errorf(
+			"insert default policy asset: %w",
+			err,
+		)
 	}
 
 	if err := tx.Commit(ctx); err != nil {
-		return nil, err
+		return nil, fmt.Errorf(
+			"commit policy transaction: %w",
+			err,
+		)
 	}
 
 	return &policy, nil
 }
+
+// ============================================================
+// FIND BY AGENT ID
+// ============================================================
 
 func (r *policyRepository) FindByAgentID(
 	ctx context.Context,
@@ -197,6 +223,10 @@ func (r *policyRepository) FindByAgentID(
 		FROM policies
 		WHERE agent_id = $1
 		AND status = 'active'
+		AND (
+			expires_at IS NULL
+			OR expires_at > NOW()
+		)
 		ORDER BY created_at DESC
 		LIMIT 1
 		`,
@@ -220,11 +250,18 @@ func (r *policyRepository) FindByAgentID(
 	)
 
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf(
+			"find policy by agent id: %w",
+			err,
+		)
 	}
 
 	return &policy, nil
 }
+
+// ============================================================
+// FIND BY ID
+// ============================================================
 
 func (r *policyRepository) FindByID(
 	ctx context.Context,
@@ -275,11 +312,18 @@ func (r *policyRepository) FindByID(
 	)
 
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf(
+			"find policy by id: %w",
+			err,
+		)
 	}
 
 	return &policy, nil
 }
+
+// ============================================================
+// UPDATE STATUS
+// ============================================================
 
 func (r *policyRepository) UpdateStatus(
 	ctx context.Context,
@@ -287,7 +331,7 @@ func (r *policyRepository) UpdateStatus(
 	status string,
 ) error {
 
-	_, err := r.db.Exec(
+	result, err := r.db.Exec(
 		ctx,
 		`
 		UPDATE policies
@@ -300,10 +344,28 @@ func (r *policyRepository) UpdateStatus(
 		id,
 	)
 
-	return err
+	if err != nil {
+		return fmt.Errorf(
+			"update policy status: %w",
+			err,
+		)
+	}
+
+	if result.RowsAffected() == 0 {
+		return pgx.ErrNoRows
+	}
+
+	return nil
 }
 
+// ============================================================
+// PLACEHOLDERS
+// ============================================================
+
 func placeholders(length int) string {
+	if length <= 0 {
+		return ""
+	}
 
 	values := make([]string, length)
 

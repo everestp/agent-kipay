@@ -1,0 +1,4 @@
+protoc \
+  --go_out=. \
+  --go-grpc_out=. \
+  modules/settlement/proto/verifier.proto
