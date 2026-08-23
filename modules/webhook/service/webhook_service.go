@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/everest/bheri/modules/webhook/dto"
 	"github.com/everest/bheri/modules/webhook/repository"
@@ -16,57 +17,83 @@ type WebhookService struct {
 func NewWebhookService(
 	repository *repository.WebhookRepository,
 ) *WebhookService {
-
 	return &WebhookService{
 		repository: repository,
 	}
 }
+
+// ============================================================
+// PROCESS WEBHOOK
+// ============================================================
 
 func (s *WebhookService) Process(
 	ctx context.Context,
 	req dto.WebhookRequest,
 ) (*dto.WebhookResponse, error) {
 
-	if req.EventID == "" {
-		return nil, errors.New("event_id is required")
+	if s.repository == nil {
+		return nil, errors.New("webhook repository is nil")
 	}
 
-	if req.EventType == "" {
-		return nil, errors.New("event_type is required")
-	}
-
-	if req.Network == "" {
-		return nil, errors.New("network is required")
-	}
-
-	exists, err := s.repository.Exists(
-		ctx,
-		req.EventID,
-	)
-
-	if err != nil {
+	if err := ctx.Err(); err != nil {
 		return nil, err
 	}
 
-	// Idempotency.
+	// ----------------------------------------------------------
+	// VALIDATION
+	// ----------------------------------------------------------
+
+	eventID := strings.TrimSpace(req.EventID)
+	if eventID == "" {
+		return nil, errors.New("event_id is required")
+	}
+
+	eventType := strings.TrimSpace(req.EventType)
+	if eventType == "" {
+		return nil, errors.New("event_type is required")
+	}
+
+	network := strings.TrimSpace(req.Network)
+	if network == "" {
+		return nil, errors.New("network is required")
+	}
+
+	// ----------------------------------------------------------
+	// IDEMPOTENCY CHECK
+	// ----------------------------------------------------------
+
+	exists, err := s.repository.Exists(
+		ctx,
+		eventID,
+	)
+	if err != nil {
+		return nil, fmt.Errorf(
+			"check webhook event: %w",
+			err,
+		)
+	}
+
 	if exists {
 		return &dto.WebhookResponse{
-			EventID:   req.EventID,
-			EventType: req.EventType,
+			EventID:   eventID,
+			EventType: eventType,
 			Status:    "already_processed",
 			Message:   "webhook event already exists",
 		}, nil
 	}
 
+	// ----------------------------------------------------------
+	// CREATE WEBHOOK EVENT
+	// ----------------------------------------------------------
+
 	id, err := s.repository.Create(
 		ctx,
-		req.EventID,
-		req.EventType,
-		req.Network,
+		eventID,
+		eventType,
+		network,
 		req.Signature,
 		req.Data,
 	)
-
 	if err != nil {
 		return nil, fmt.Errorf(
 			"create webhook event: %w",
@@ -74,11 +101,11 @@ func (s *WebhookService) Process(
 		)
 	}
 
-	// ---------------------------------------------------------
-	// BHERI EVENT PROCESSING
-	// ---------------------------------------------------------
+	// ----------------------------------------------------------
+	// PROCESS EVENT
+	// ----------------------------------------------------------
 
-	switch req.EventType {
+	switch eventType {
 
 	case "payment.confirmed":
 		err = s.processPaymentConfirmed(
@@ -99,84 +126,191 @@ func (s *WebhookService) Process(
 		)
 
 	default:
-		// Unknown events are intentionally stored.
+		// Unknown events are stored but not rejected.
 		err = nil
 	}
 
+	// ----------------------------------------------------------
+	// HANDLE PROCESSING ERROR
+	// ----------------------------------------------------------
+
 	if err != nil {
 
-		_ = s.repository.MarkFailed(
+		markErr := s.repository.MarkFailed(
 			ctx,
 			id,
 			err.Error(),
 		)
 
+		if markErr != nil {
+			return nil, errors.Join(
+				err,
+				fmt.Errorf(
+					"mark webhook failed: %w",
+					markErr,
+				),
+			)
+		}
+
 		return nil, err
 	}
+
+	// ----------------------------------------------------------
+	// MARK PROCESSED
+	// ----------------------------------------------------------
 
 	if err := s.repository.MarkProcessed(
 		ctx,
 		id,
 	); err != nil {
-		return nil, err
+		return nil, fmt.Errorf(
+			"mark webhook processed: %w",
+			err,
+		)
 	}
+
+	// ----------------------------------------------------------
+	// RESPONSE
+	// ----------------------------------------------------------
 
 	return &dto.WebhookResponse{
 		ID:        id,
-		EventID:   req.EventID,
-		EventType: req.EventType,
+		EventID:   eventID,
+		EventType: eventType,
 		Status:    "processed",
 		Message:   "webhook processed successfully",
 	}, nil
 }
+
+// ============================================================
+// PAYMENT CONFIRMED
+// ============================================================
 
 func (s *WebhookService) processPaymentConfirmed(
 	ctx context.Context,
 	req dto.WebhookRequest,
 ) error {
 
-	// Later this can call the payment service.
-	//
-	// Example:
-	//
-	// paymentID := req.Data["payment_id"]
-	// txHash := req.Data["tx_hash"]
-	//
-	// paymentService.Confirm(...)
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+
+	/*
+		Expected webhook data can contain:
+
+		payment_id
+		tx_hash
+		amount
+		asset
+		receiver
+		block_number
+
+		Example future implementation:
+
+		paymentID := req.Data["payment_id"]
+		txHash := req.Data["tx_hash"]
+
+		paymentService.Confirm(...)
+	*/
 
 	return nil
 }
+
+// ============================================================
+// PAYMENT FAILED
+// ============================================================
 
 func (s *WebhookService) processPaymentFailed(
 	ctx context.Context,
 	req dto.WebhookRequest,
 ) error {
 
-	// Later:
-	// paymentService.Fail(...)
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+
+	/*
+		Expected webhook data:
+
+		payment_id
+		tx_hash
+		reason
+
+		Future:
+
+		paymentService.Fail(...)
+	*/
 
 	return nil
 }
+
+// ============================================================
+// TRANSACTION CONFIRMED
+// ============================================================
 
 func (s *WebhookService) processTransactionConfirmed(
 	ctx context.Context,
 	req dto.WebhookRequest,
 ) error {
 
-	// Later:
-	// settlementService.Verify(...)
-	// transactionService.Confirm(...)
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+
+	/*
+		Expected webhook data:
+
+		transaction_id
+		payment_id
+		tx_hash
+		amount
+		asset
+		receiver
+		block_number
+
+		Future:
+
+		transactionService.Confirm(...)
+
+		settlementService.Verify(...)
+	*/
 
 	return nil
 }
+
+// ============================================================
+// GET WEBHOOK
+// ============================================================
 
 func (s *WebhookService) Get(
 	ctx context.Context,
 	id string,
 ) (map[string]interface{}, error) {
 
-	return s.repository.Get(
+	if s.repository == nil {
+		return nil, errors.New("webhook repository is nil")
+	}
+
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
+
+	id = strings.TrimSpace(id)
+
+	if id == "" {
+		return nil, errors.New("webhook id is required")
+	}
+
+	result, err := s.repository.Get(
 		ctx,
 		id,
 	)
+	if err != nil {
+		return nil, fmt.Errorf(
+			"get webhook: %w",
+			err,
+		)
+	}
+
+	return result, nil
 }

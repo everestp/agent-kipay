@@ -3,54 +3,12 @@
 package main
 
 import (
+	"context"
 	"net/http"
 	"os"
 
 	"github.com/everest/bheri/config"
 	"github.com/everest/bheri/database"
-
-	agentcontroller "github.com/everest/bheri/modules/agent/controller"
-	agentrepo "github.com/everest/bheri/modules/agent/repository"
-	agentservice "github.com/everest/bheri/modules/agent/service"
-
-	apikeycontroller "github.com/everest/bheri/modules/api_key/controller"
-	apikeyrepo "github.com/everest/bheri/modules/api_key/repository"
-	apikeyservice "github.com/everest/bheri/modules/api_key/service"
-
-	apiservicecontroller "github.com/everest/bheri/modules/api_service/controller"
-	apiservicerepo "github.com/everest/bheri/modules/api_service/repository"
-	apiserviceservice "github.com/everest/bheri/modules/api_service/service"
-
-	blockchainclient "github.com/everest/bheri/modules/blockchain/client"
-	blockchainservice "github.com/everest/bheri/modules/blockchain/service"
-
-	dashboardcontroller "github.com/everest/bheri/modules/dashboard/controller"
-	dashboardrepo "github.com/everest/bheri/modules/dashboard/repository"
-	dashboardservice "github.com/everest/bheri/modules/dashboard/service"
-
-	ledgercontroller "github.com/everest/bheri/modules/ledger/controller"
-	ledgerrepo "github.com/everest/bheri/modules/ledger/repository"
-	ledgerservice "github.com/everest/bheri/modules/ledger/service"
-
-	paymentcontroller "github.com/everest/bheri/modules/payment/controller"
-	paymentrepo "github.com/everest/bheri/modules/payment/repository"
-	paymentservice "github.com/everest/bheri/modules/payment/service"
-
-	policycontroller "github.com/everest/bheri/modules/policy/controller"
-	policyrepo "github.com/everest/bheri/modules/policy/repository"
-	policyservice "github.com/everest/bheri/modules/policy/service"
-
-	sessioncontroller "github.com/everest/bheri/modules/session/controller"
-	sessionrepo "github.com/everest/bheri/modules/session/repository"
-	sessionservice "github.com/everest/bheri/modules/session/service"
-
-	settlementcontroller "github.com/everest/bheri/modules/settlement/controller"
-	settlementrepo "github.com/everest/bheri/modules/settlement/repository"
-	settlementservice "github.com/everest/bheri/modules/settlement/service"
-
-	transactioncontroller "github.com/everest/bheri/modules/transaction/controller"
-	transactionrepo "github.com/everest/bheri/modules/transaction/repository"
-	transactionservice "github.com/everest/bheri/modules/transaction/service"
 
 	usercontroller "github.com/everest/bheri/modules/user/controller"
 	userrepo "github.com/everest/bheri/modules/user/repository"
@@ -60,212 +18,190 @@ import (
 	walletrepo "github.com/everest/bheri/modules/wallet/repository"
 	walletservice "github.com/everest/bheri/modules/wallet/service"
 
+	agentcontroller "github.com/everest/bheri/modules/agent/controller"
+	agentrepo "github.com/everest/bheri/modules/agent/repository"
+	agentservice "github.com/everest/bheri/modules/agent/service"
+
+	policycontroller "github.com/everest/bheri/modules/policy/controller"
+	policyrepo "github.com/everest/bheri/modules/policy/repository"
+	policyservice "github.com/everest/bheri/modules/policy/service"
+
+	sessioncontroller "github.com/everest/bheri/modules/session/controller"
+	sessionrepo "github.com/everest/bheri/modules/session/repository"
+	sessionservice "github.com/everest/bheri/modules/session/service"
+
+	paymentcontroller "github.com/everest/bheri/modules/payment/controller"
+	paymentrepo "github.com/everest/bheri/modules/payment/repository"
+	paymentservice "github.com/everest/bheri/modules/payment/service"
+
+	apiservicecontroller "github.com/everest/bheri/modules/api_service/controller"
+	apiservicerepo "github.com/everest/bheri/modules/api_service/repository"
+	apiserviceservice "github.com/everest/bheri/modules/api_service/service"
+
+	dashboardcontroller "github.com/everest/bheri/modules/dashboard/controller"
+	dashboardrepo "github.com/everest/bheri/modules/dashboard/repository"
+	dashboardservice "github.com/everest/bheri/modules/dashboard/service"
+
 	"github.com/everest/bheri/pkg/middleware"
 
 	"github.com/go-chi/chi/v5"
 )
 
 func main() {
-	logger := config.NewLogger()
 
-	// =========================================================
-	// DATABASE
-	// =========================================================
+	logger := config.NewLogger()
 
 	db, err := database.NewPostgres()
 	if err != nil {
 		logger.Fatal(err)
 	}
 
+	defer db.Close(context.Background())
 
 	// =========================================================
 	// USER
 	// =========================================================
 
-	userRepository := userrepo.NewUserRepository(db)
+	userRepository :=
+		userrepo.NewUserRepository(db)
 
-	userService := userservice.NewUserService(
-		userRepository,
+	userService :=
+		userservice.NewUserService(
+			userRepository,
+		)
+
+	userController :=
+		usercontroller.NewUserController(
+			userService,
+		)
+
+		//dahboard
+		dashboardRepository :=
+	dashboardrepo.NewDashboardRepository(db)
+
+dashboardService :=
+	dashboardservice.NewDashboardService(
+		dashboardRepository,
 	)
 
-	userController := usercontroller.NewUserController(
-		userService,
+dashboardController :=
+	dashboardcontroller.NewDashboardController(
+		dashboardService,
 	)
 
 	// =========================================================
 	// WALLET
 	// =========================================================
 
-	walletRepository := walletrepo.NewWalletRepository(db)
+	walletRepository :=
+		walletrepo.NewWalletRepository(db)
 
-	walletService := walletservice.NewWalletService(
-		walletRepository,
-	)
+	walletService :=
+		walletservice.NewWalletService(
+			walletRepository,
+		)
 
-	walletController := walletcontroller.NewWalletController(
-		walletService,
-	)
+	walletController :=
+		walletcontroller.NewWalletController(
+			walletService,
+		)
 
 	// =========================================================
 	// AGENT
 	// =========================================================
 
-	agentRepository := agentrepo.NewAgentRepository(db)
+	agentRepository :=
+		agentrepo.NewAgentRepository(db)
 
-	agentService := agentservice.NewAgentService(
-		agentRepository,
-	)
+	agentService :=
+		agentservice.NewAgentService(
+			agentRepository,
+		)
 
-	agentController := agentcontroller.NewAgentController(
-		agentService,
-	)
+	agentController :=
+		agentcontroller.NewAgentController(
+			agentService,
+		)
 
 	// =========================================================
 	// POLICY
 	// =========================================================
 
-	policyRepository := policyrepo.NewPolicyRepository(db)
+	policyRepository :=
+		policyrepo.NewPolicyRepository(db)
 
-	policyService := policyservice.NewPolicyService(
-		policyRepository,
-	)
+	policyService :=
+		policyservice.NewPolicyService(
+			policyRepository,
+		)
 
-	policyController := policycontroller.NewPolicyController(
-		policyService,
-	)
+	policyController :=
+		policycontroller.NewPolicyController(
+			policyService,
+		)
 
 	// =========================================================
 	// SESSION
 	// =========================================================
 
-	sessionRepository := sessionrepo.NewSessionRepository(db)
+	sessionRepository :=
+		sessionrepo.NewSessionRepository(db)
 
-	sessionService := sessionservice.NewSessionService(
-		sessionRepository,
-	)
+	sessionService :=
+		sessionservice.NewSessionService(
+			sessionRepository,
+		)
 
-	sessionController := sessioncontroller.NewSessionController(
-		sessionService,
-	)
-
-	// =========================================================
-	// API KEY
-	// =========================================================
-
-	apiKeyRepository := apikeyrepo.NewAPIKeyRepository(db)
-
-	apiKeyService := apikeyservice.NewAPIKeyService(
-		apiKeyRepository,
-	)
-
-	apiKeyController := apikeycontroller.NewAPIKeyController(
-		apiKeyService,
-	)
+	sessionController :=
+		sessioncontroller.NewSessionController(
+			sessionService,
+		)
 
 	// =========================================================
 	// API SERVICES
 	// =========================================================
 
-	apiServiceRepository := apiservicerepo.NewAPIServiceRepository(db)
+	apiServiceRepository :=
+		apiservicerepo.NewAPIServiceRepository(db)
 
-	apiServiceService := apiserviceservice.NewAPIServiceService(
-		apiServiceRepository,
-	)
+	apiServiceService :=
+		apiserviceservice.NewAPIServiceService(
+			apiServiceRepository,
+		)
 
-	apiServiceController := apiservicecontroller.NewAPIServiceController(
-		apiServiceService,
-	)
-
-	// =========================================================
-	// BLOCKCHAIN
-	// =========================================================
-
-	solanaRPC := os.Getenv("SOLANA_RPC_URL")
-
-	if solanaRPC == "" {
-		solanaRPC = "https://api.devnet.solana.com"
-	}
-
-	solanaClient := blockchainclient.NewSolanaClient(
-		solanaRPC,
-	)
-
-	blockchainService := blockchainservice.NewBlockchainService(
-		solanaClient,
-	)
+	apiServiceController :=
+		apiservicecontroller.NewAPIServiceController(
+			apiServiceService,
+		)
 
 	// =========================================================
 	// PAYMENT
 	// =========================================================
 
-	paymentRepository := paymentrepo.NewPaymentRepository(db)
+	paymentRepository :=
+		paymentrepo.NewPaymentRepository(db)
 
-	paymentService := paymentservice.NewPaymentService(
-		paymentRepository,
-		policyService,
-		sessionService,
-	)
+	/*
+		Payment service requires:
 
-	paymentController := paymentcontroller.NewPaymentController(
-		paymentService,
-	)
+		- PaymentRepository
+		- PolicyEngine
+		- SessionService
 
-	// =========================================================
-	// SETTLEMENT
-	// =========================================================
+		Your policyService must implement PolicyEngine.
+	*/
 
-	settlementRepository := settlementrepo.NewSettlementRepository(db)
+	paymentService :=
+		paymentservice.NewPaymentService(
+			paymentRepository,
+			policyService,
+			sessionService,
+		)
 
-	settlementService := settlementservice.NewSettlementService(
-		settlementRepository,
-		blockchainService,
-	)
-
-	settlementController := settlementcontroller.NewSettlementController(
-		settlementService,
-	)
-
-	// =========================================================
-	// TRANSACTION
-	// =========================================================
-
-	transactionRepository := transactionrepo.NewTransactionRepository(db)
-
-	transactionService := transactionservice.NewTransactionService(
-		transactionRepository,
-	)
-
-	transactionController := transactioncontroller.NewTransactionController(
-		transactionService,
-	)
-
-	// =========================================================
-	// LEDGER
-	// =========================================================
-
-	ledgerRepository := ledgerrepo.NewLedgerRepository(db)
-
-	ledgerService := ledgerservice.NewLedgerService(
-		ledgerRepository,
-	)
-
-	ledgerController := ledgercontroller.NewLedgerController(
-		ledgerService,
-	)
-
-	// =========================================================
-	// DASHBOARD
-	// =========================================================
-
-	dashboardRepository := dashboardrepo.NewDashboardRepository(db)
-
-	dashboardService := dashboardservice.NewDashboardService(
-		dashboardRepository,
-	)
-
-	dashboardController := dashboardcontroller.NewDashboardController(
-		dashboardService,
-	)
+	paymentController :=
+		paymentcontroller.NewPaymentController(
+			paymentService,
+		)
 
 	// =========================================================
 	// ROUTER
@@ -292,34 +228,26 @@ func main() {
 		)
 
 		// =====================================================
-		// AUTHENTICATED ROUTES
+		// USER
 		// =====================================================
 
 		r.Group(func(r chi.Router) {
 
 			r.Use(middleware.Auth)
 
-			// =================================================
-			// USER
-			// =================================================
-
 			r.Get(
 				"/me",
 				userController.Me,
 			)
+		})
 
-			// =================================================
-			// DASHBOARD
-			// =================================================
+		// =====================================================
+		// WALLET
+		// =====================================================
 
-			r.Get(
-				"/dashboard",
-				dashboardController.Get,
-			)
+		r.Group(func(r chi.Router) {
 
-			// =================================================
-			// WALLET
-			// =================================================
+			r.Use(middleware.Auth)
 
 			r.Post(
 				"/wallets",
@@ -335,10 +263,15 @@ func main() {
 				"/wallets/{id}",
 				walletController.Get,
 			)
+		})
 
-			// =================================================
-			// AGENTS
-			// =================================================
+		// =====================================================
+		// AGENTS
+		// =====================================================
+
+		r.Group(func(r chi.Router) {
+
+			r.Use(middleware.Auth)
 
 			r.Post(
 				"/agents",
@@ -364,10 +297,15 @@ func main() {
 				"/agents/{id}",
 				agentController.Delete,
 			)
+		})
 
-			// =================================================
-			// POLICIES
-			// =================================================
+		// =====================================================
+		// POLICIES
+		// =====================================================
+
+		r.Group(func(r chi.Router) {
+
+			r.Use(middleware.Auth)
 
 			r.Post(
 				"/policies",
@@ -383,10 +321,27 @@ func main() {
 				"/agents/{agentID}/policy/evaluate",
 				policyController.Evaluate,
 			)
+		})
+		//=====================================================
+		// Dashboard
+		// =====================================================
+r.Group(func(r chi.Router) {
 
-			// =================================================
-			// SESSIONS
-			// =================================================
+	r.Use(middleware.Auth)
+
+	r.Get(
+		"/dashboard",
+		dashboardController.Get,
+	)
+})
+
+		// =====================================================
+		// SESSIONS
+		// =====================================================
+
+		r.Group(func(r chi.Router) {
+
+			r.Use(middleware.Auth)
 
 			r.Post(
 				"/agents/{agentID}/sessions",
@@ -402,34 +357,34 @@ func main() {
 				"/sessions/{id}/revoke",
 				sessionController.Revoke,
 			)
+		})
 
-			// =================================================
-			// API KEYS
-			// =================================================
+		// =====================================================
+		// PAYMENTS
+		// =====================================================
+
+		r.Group(func(r chi.Router) {
+
+			r.Use(middleware.Auth)
 
 			r.Post(
-				"/api-keys",
-				apiKeyController.Create,
+				"/payments",
+				paymentController.Create,
 			)
 
 			r.Get(
-				"/api-keys",
-				apiKeyController.List,
+				"/payments/{id}",
+				paymentController.Get,
 			)
+		})
 
-			r.Get(
-				"/api-keys/{id}",
-				apiKeyController.Get,
-			)
+		// =====================================================
+		// API SERVICES
+		// =====================================================
 
-			r.Post(
-				"/api-keys/{id}/revoke",
-				apiKeyController.Revoke,
-			)
+		r.Group(func(r chi.Router) {
 
-			// =================================================
-			// API SERVICES
-			// =================================================
+			r.Use(middleware.Auth)
 
 			r.Post(
 				"/api-services",
@@ -459,72 +414,6 @@ func main() {
 			r.Delete(
 				"/api-services/{id}",
 				apiServiceController.Delete,
-			)
-
-			// =================================================
-			// PAYMENTS
-			// =================================================
-
-			r.Post(
-				"/payments",
-				paymentController.Create,
-			)
-
-			r.Get(
-				"/payments/{id}",
-				paymentController.Get,
-			)
-
-			// =================================================
-			// TRANSACTIONS
-			// =================================================
-
-			r.Get(
-				"/transactions",
-				transactionController.List,
-			)
-
-			r.Get(
-				"/transactions/{id}",
-				transactionController.Get,
-			)
-
-			// =================================================
-			// SETTLEMENTS
-			// =================================================
-
-			r.Post(
-				"/settlements",
-				settlementController.Create,
-			)
-
-			r.Get(
-				"/settlements",
-				settlementController.List,
-			)
-
-			r.Get(
-				"/settlements/{id}",
-				settlementController.Get,
-			)
-
-			r.Post(
-				"/settlements/{id}/verify",
-				settlementController.Verify,
-			)
-
-			// =================================================
-			// LEDGER
-			// =================================================
-
-			r.Get(
-				"/ledger",
-				ledgerController.ListAccounts,
-			)
-
-			r.Get(
-				"/ledger/{id}",
-				ledgerController.GetAccount,
 			)
 		})
 	})
