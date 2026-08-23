@@ -68,3 +68,24 @@ type Session struct {
 	CreatedAt time.Time `json:"created_at"`
 	ExpiresAt time.Time `json:"expires_at"`
 }
+type Payment struct {
+	ID             string     `json:"id"`
+	AgentID        string     `json:"agent_id"`
+	SessionID      *string    `json:"session_id"`
+	ServiceID      *string    `json:"service_id"`
+	Amount         float64    `json:"amount"`
+	Asset          string     `json:"asset"`
+	Network        string     `json:"network"`
+	Protocol       string     `json:"protocol"`
+	Status         string     `json:"status"`
+	PolicyDecision string     `json:"policy_decision"`
+	PolicyReason   string     `json:"policy_reason"`
+	IdempotencyKey string     `json:"idempotency_key"`
+	PaymentNonce   string     `json:"payment_nonce"`
+	TxHash         *string    `json:"tx_hash"`
+	CreatedAt      time.Time  `json:"created_at"`
+	ApprovedAt     *time.Time `json:"approved_at"`
+	SubmittedAt    *time.Time `json:"submitted_at"`
+	CompletedAt    *time.Time `json:"completed_at"`
+	FailedAt       *time.Time `json:"failed_at"`
+}
