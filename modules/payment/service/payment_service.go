@@ -6,7 +6,7 @@ import (
 
 	"github.com/everest/bheri/models"
 	"github.com/everest/bheri/modules/payment/dto"
-	"github.com/everest/bheri/modules/payment/repository"
+	paymentrepo "github.com/everest/bheri/modules/payment/repository"
 	policyservice "github.com/everest/bheri/modules/policy/service"
 	sessionservice "github.com/everest/bheri/modules/session/service"
 )
@@ -24,13 +24,13 @@ type PaymentService interface {
 }
 
 type paymentService struct {
-	repository repository.PaymentRepository
+	repository paymentrepo.PaymentRepository
 	policy     policyservice.PolicyEngine
 	session    sessionservice.SessionService
 }
 
 func NewPaymentService(
-	repository repository.PaymentRepository,
+	repository paymentrepo.PaymentRepository,
 	policy policyservice.PolicyEngine,
 	session sessionservice.SessionService,
 ) PaymentService {
@@ -101,6 +101,14 @@ func (s *paymentService) Create(
 		}, nil
 	}
 
+	// Only continue when the error means "not found".
+	//
+	// Replace this with your actual repository not-found error
+	// if you have one.
+	if err != nil && !errors.Is(err, paymentrepo.ErrPaymentNotFound) {
+		return nil, err
+	}
+
 	// =========================================================
 	// SESSION VALIDATION
 	// =========================================================
@@ -161,12 +169,15 @@ func (s *paymentService) Create(
 	// =========================================================
 
 	return &dto.PaymentResponse{
-		ID:       created.ID,
-		Status:   created.Status,
-		Amount:   created.Amount,
-		Asset:    created.Asset,
-		Network:  created.Network,
-		Protocol: created.Protocol,
+		ID:             created.ID,
+		Status:         created.Status,
+		Amount:         created.Amount,
+		Asset:          created.Asset,
+		Network:        created.Network,
+		Protocol:       created.Protocol,
+		PolicyDecision: created.PolicyDecision,
+		PolicyReason:   created.PolicyReason,
+		TxHash:         created.TxHash,
 	}, nil
 }
 

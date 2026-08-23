@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"errors"
 
 	"github.com/everest/bheri/models"
 	"github.com/jackc/pgx/v5"
@@ -50,7 +51,7 @@ type PaymentRepository interface {
 type paymentRepository struct {
 	db *pgx.Conn
 }
-
+var ErrPaymentNotFound = errors.New("payment not found")
 func NewPaymentRepository(
 	db *pgx.Conn,
 ) PaymentRepository {

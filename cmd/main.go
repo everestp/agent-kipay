@@ -43,12 +43,10 @@ import (
 	dashboardservice "github.com/everest/bheri/modules/dashboard/service"
 
 	"github.com/everest/bheri/pkg/middleware"
-
 	"github.com/go-chi/chi/v5"
 )
 
 func main() {
-
 	logger := config.NewLogger()
 
 	db, err := database.NewPostgres()
@@ -62,30 +60,27 @@ func main() {
 	// USER
 	// =========================================================
 
-	userRepository :=
-		userrepo.NewUserRepository(db)
+	userRepository := userrepo.NewUserRepository(db)
 
-	userService :=
-		userservice.NewUserService(
-			userRepository,
-		)
+	userService := userservice.NewUserService(
+		userRepository,
+	)
 
-	userController :=
-		usercontroller.NewUserController(
-			userService,
-		)
+	userController := usercontroller.NewUserController(
+		userService,
+	)
 
-		//dahboard
-		dashboardRepository :=
-	dashboardrepo.NewDashboardRepository(db)
+	// =========================================================
+	// DASHBOARD
+	// =========================================================
 
-dashboardService :=
-	dashboardservice.NewDashboardService(
+	dashboardRepository := dashboardrepo.NewDashboardRepository(db)
+
+	dashboardService := dashboardservice.NewDashboardService(
 		dashboardRepository,
 	)
 
-dashboardController :=
-	dashboardcontroller.NewDashboardController(
+	dashboardController := dashboardcontroller.NewDashboardController(
 		dashboardService,
 	)
 
@@ -93,116 +88,99 @@ dashboardController :=
 	// WALLET
 	// =========================================================
 
-	walletRepository :=
-		walletrepo.NewWalletRepository(db)
+	walletRepository := walletrepo.NewWalletRepository(db)
 
-	walletService :=
-		walletservice.NewWalletService(
-			walletRepository,
-		)
+	walletService := walletservice.NewWalletService(
+		walletRepository,
+	)
 
-	walletController :=
-		walletcontroller.NewWalletController(
-			walletService,
-		)
+	walletController := walletcontroller.NewWalletController(
+		walletService,
+	)
 
 	// =========================================================
 	// AGENT
 	// =========================================================
 
-	agentRepository :=
-		agentrepo.NewAgentRepository(db)
+	agentRepository := agentrepo.NewAgentRepository(db)
 
-	agentService :=
-		agentservice.NewAgentService(
-			agentRepository,
-		)
+	agentService := agentservice.NewAgentService(
+		agentRepository,
+	)
 
-	agentController :=
-		agentcontroller.NewAgentController(
-			agentService,
-		)
+	agentController := agentcontroller.NewAgentController(
+		agentService,
+	)
 
 	// =========================================================
 	// POLICY
 	// =========================================================
 
-	policyRepository :=
-		policyrepo.NewPolicyRepository(db)
+	policyRepository := policyrepo.NewPolicyRepository(db)
 
-	policyService :=
-		policyservice.NewPolicyService(
-			policyRepository,
-		)
+	policyService := policyservice.NewPolicyService(
+		policyRepository,
+	)
 
-	policyController :=
-		policycontroller.NewPolicyController(
-			policyService,
-		)
+	policyController := policycontroller.NewPolicyController(
+		policyService,
+	)
 
 	// =========================================================
 	// SESSION
 	// =========================================================
 
-	sessionRepository :=
-		sessionrepo.NewSessionRepository(db)
+	sessionRepository := sessionrepo.NewSessionRepository(db)
 
-	sessionService :=
-		sessionservice.NewSessionService(
-			sessionRepository,
-		)
+	sessionService := sessionservice.NewSessionService(
+		sessionRepository,
+	)
 
-	sessionController :=
-		sessioncontroller.NewSessionController(
-			sessionService,
-		)
+	sessionController := sessioncontroller.NewSessionController(
+		sessionService,
+	)
 
 	// =========================================================
 	// API SERVICES
 	// =========================================================
 
-	apiServiceRepository :=
-		apiservicerepo.NewAPIServiceRepository(db)
+	apiServiceRepository := apiservicerepo.NewAPIServiceRepository(db)
 
-	apiServiceService :=
-		apiserviceservice.NewAPIServiceService(
-			apiServiceRepository,
-		)
+	apiServiceService := apiserviceservice.NewAPIServiceService(
+		apiServiceRepository,
+	)
 
-	apiServiceController :=
-		apiservicecontroller.NewAPIServiceController(
-			apiServiceService,
-		)
+	apiServiceController := apiservicecontroller.NewAPIServiceController(
+		apiServiceService,
+	)
 
-	// =========================================================
-	// PAYMENT
-	// =========================================================
 
-	paymentRepository :=
-		paymentrepo.NewPaymentRepository(db)
 
-	/*
-		Payment service requires:
 
-		- PaymentRepository
-		- PolicyEngine
-		- SessionService
 
-		Your policyService must implement PolicyEngine.
-	*/
 
-	paymentService :=
-		paymentservice.NewPaymentService(
-			paymentRepository,
-			policyService,
-			sessionService,
-		)
 
-	paymentController :=
-		paymentcontroller.NewPaymentController(
-			paymentService,
-		)
+policyEngine := policyservice.NewPolicyEngine(
+	policyService,
+)
 
+
+
+// =========================================================
+// PAYMENT
+// =========================================================
+
+paymentRepository := paymentrepo.NewPaymentRepository(db)
+
+paymentService := paymentservice.NewPaymentService(
+	paymentRepository,
+	policyEngine,
+	sessionService,
+)
+
+paymentController := paymentcontroller.NewPaymentController(
+	paymentService,
+)
 	// =========================================================
 	// ROUTER
 	// =========================================================
@@ -232,7 +210,6 @@ dashboardController :=
 		// =====================================================
 
 		r.Group(func(r chi.Router) {
-
 			r.Use(middleware.Auth)
 
 			r.Get(
@@ -246,7 +223,6 @@ dashboardController :=
 		// =====================================================
 
 		r.Group(func(r chi.Router) {
-
 			r.Use(middleware.Auth)
 
 			r.Post(
@@ -270,7 +246,6 @@ dashboardController :=
 		// =====================================================
 
 		r.Group(func(r chi.Router) {
-
 			r.Use(middleware.Auth)
 
 			r.Post(
@@ -304,7 +279,6 @@ dashboardController :=
 		// =====================================================
 
 		r.Group(func(r chi.Router) {
-
 			r.Use(middleware.Auth)
 
 			r.Post(
@@ -322,25 +296,25 @@ dashboardController :=
 				policyController.Evaluate,
 			)
 		})
-		//=====================================================
-		// Dashboard
+
 		// =====================================================
-r.Group(func(r chi.Router) {
+		// DASHBOARD
+		// =====================================================
 
-	r.Use(middleware.Auth)
+		r.Group(func(r chi.Router) {
+			r.Use(middleware.Auth)
 
-	r.Get(
-		"/dashboard",
-		dashboardController.Get,
-	)
-})
+			r.Get(
+				"/dashboard",
+				dashboardController.Get,
+			)
+		})
 
 		// =====================================================
 		// SESSIONS
 		// =====================================================
 
 		r.Group(func(r chi.Router) {
-
 			r.Use(middleware.Auth)
 
 			r.Post(
@@ -364,7 +338,6 @@ r.Group(func(r chi.Router) {
 		// =====================================================
 
 		r.Group(func(r chi.Router) {
-
 			r.Use(middleware.Auth)
 
 			r.Post(
@@ -383,7 +356,6 @@ r.Group(func(r chi.Router) {
 		// =====================================================
 
 		r.Group(func(r chi.Router) {
-
 			r.Use(middleware.Auth)
 
 			r.Post(
