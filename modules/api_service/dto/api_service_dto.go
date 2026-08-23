@@ -7,6 +7,7 @@ type CreateAPIServiceRequest struct {
 	PricePerRequest float64 `json:"price_per_request"`
 	Asset           string  `json:"asset"`
 	Network         string  `json:"network"`
+	Status         string  `json:"status"`
 	Description     string  `json:"description"`
 }
 

@@ -94,6 +94,7 @@ type APIService struct {
 	Name              string    `json:"name"`
 	Category          string    `json:"category"`
 	Endpoint          string    `json:"endpoint"`
+	Status          string    `json:"status"`
 	PricePerRequest   float64   `json:"price_per_request"`
 	Asset             string    `json:"asset"`
 	Network           string    `json:"network"`

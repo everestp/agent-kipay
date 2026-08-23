@@ -61,54 +61,54 @@ func (r *apiServiceRepository) Create(
 
 	var service models.APIService
 
-	err := r.db.QueryRow(
-		ctx,
-		`
-		INSERT INTO api_services (
-			name,
-			category,
-			endpoint,
-			price_per_request,
-			asset,
-			network,
-			description
-		)
-		VALUES ($1,$2,$3,$4,$5,$6,$7)
-		RETURNING
-			id,
-			name,
-			COALESCE(category, ''),
-			endpoint,
-			price_per_request,
-			asset,
-			network,
-			COALESCE(description, ''),
-			provider_reputation,
-			active,
-			created_at,
-			updated_at
-		`,
-		request.Name,
-		request.Category,
-		request.Endpoint,
-		request.PricePerRequest,
-		request.Asset,
-		request.Network,
-		request.Description,
-	).Scan(
-		&service.ID,
-		&service.Name,
-		&service.Category,
-		&service.Endpoint,
-		&service.PricePerRequest,
-		&service.Asset,
-		&service.Network,
-		&service.Description,
-		&service.ProviderReputation,
-		&service.Active,
-		&service.CreatedAt,
-		&service.UpdatedAt,
-	)
+err := r.db.QueryRow(
+    ctx,
+    `
+    INSERT INTO api_services (
+        name,
+        category,
+        endpoint,
+        price_per_request,
+        asset,
+        network,
+        description
+    )
+    VALUES ($1, $2, $3, $4, $5, $6, $7)
+    RETURNING
+        id,
+        name,
+        COALESCE(category, ''),
+        endpoint,
+        price_per_request,
+        asset,
+        network,
+        COALESCE(description, ''),
+        provider_reputation,
+        status,
+        created_at,
+        updated_at
+    `,
+    request.Name,
+    request.Category,
+    request.Endpoint,
+    request.PricePerRequest,
+    request.Asset,
+    request.Network,
+    request.Description,
+).Scan(
+    &service.ID,
+    &service.Name,
+    &service.Category,
+    &service.Endpoint,
+    &service.PricePerRequest,
+    &service.Asset,
+    &service.Network,
+    &service.Description,
+    &service.ProviderReputation,
+    &service.Status,
+    &service.CreatedAt,
+    &service.UpdatedAt,
+)
 
 	if err != nil {
 		return nil, err

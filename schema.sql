@@ -1001,3 +1001,7 @@ CREATE TRIGGER webhooks_updated_at
 BEFORE UPDATE ON webhooks
 FOR EACH ROW
 EXECUTE FUNCTION update_updated_at();
+
+
+ALTER TABLE sessions
+ADD COLUMN name TEXT NOT NULL;
